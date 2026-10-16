@@ -1,15 +1,14 @@
 PS4 Package Assistant (macOS)
 
-Iniciar sem deixar o Terminal aberto
-1. Dê dois cliques em "Iniciar PS4 Package Assistant.command".
-2. A interface abrirá em http://localhost:4173.
-3. Clique em "Selecionar arquivo .pkg" e escolha o pacote.
-4. Confira os IPs do PS4 e do Mac; os dois precisam estar na mesma rede local.
-5. Deixe o Remote Package Installer aberto no PS4 e clique em "Enviar ao PS4".
+Usar o app
+1. Abra PS4-Package-Assistant.app. A interface abre em uma janela do próprio app, sem navegador.
+2. Clique em "Selecionar arquivo .pkg" e escolha o pacote.
+3. Confira os IPs do PS4 e do Mac; os dois precisam estar na mesma rede local.
+4. Deixe o Remote Package Installer aberto no PS4 e clique em "Enviar ao PS4".
 
-Se o macOS perguntar se deseja abrir o arquivo, confirme. Se bloquear por segurança, clique com o botão direito no arquivo, escolha Abrir e confirme novamente.
+Se o macOS bloquear o app por segurança, clique com o botão direito nele, escolha Abrir e confirme novamente.
 
-Para encerrar o servidor, dê dois cliques em "Parar PS4 Package Assistant.command". O servidor continua em segundo plano mesmo se fechar a janela do Terminal que o iniciou.
+Para trocar o arquivo no meio de um envio, clique em "Interromper upload" e escolha outro .pkg. Para encerrar o servidor, use o menu "Parar servidor de pacotes" ou feche o app: ao fechar, o servidor para junto.
 
 Mantenha o Mac ligado e sem entrar em repouso até o download terminar. O servidor de pacotes escuta na porta 8080 e a interface local na porta 4173. O macOS pode pedir para permitir conexões de entrada. O log fica em ~/Library/Application Support/PS4 Package Assistant/server.log.
 

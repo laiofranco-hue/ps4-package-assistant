@@ -12,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
         webView.loadHTMLString(page("Iniciando o servidor local…"), baseURL: nil)
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let started = Self.runStartScript()
+            let started = Self.runScript("start")
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 if started {
@@ -28,8 +28,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
         true
     }
 
-    private static func runStartScript() -> Bool {
-        guard let script = Bundle.main.url(forResource: "start", withExtension: "sh") else { return false }
+    func applicationWillTerminate(_ notification: Notification) {
+        Self.runScript("stop")
+    }
+
+    @objc private func stopServer() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            Self.runScript("stop")
+            DispatchQueue.main.async {
+                self?.webView.loadHTMLString(self?.page("Servidor de pacotes parado. Feche e abra o app para iniciar de novo.") ?? "", baseURL: nil)
+            }
+        }
+    }
+
+    @discardableResult
+    private static func runScript(_ name: String) -> Bool {
+        guard let script = Bundle.main.url(forResource: name, withExtension: "sh") else { return false }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = [script.path]
@@ -61,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
         )
         window.title = "PS4 Package Assistant"
         window.contentView = webView
-        let visible = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
+        let visible = NSScreen.screens[0].visibleFrame
         window.setFrameOrigin(NSPoint(x: visible.midX - window.frame.width / 2, y: visible.midY - window.frame.height / 2))
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -74,6 +88,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
         mainMenu.addItem(appItem)
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "Ocultar PS4 Package Assistant", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(.separator())
+        let stopItem = NSMenuItem(title: "Parar servidor de pacotes", action: #selector(stopServer), keyEquivalent: "")
+        stopItem.target = self
+        appMenu.addItem(stopItem)
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Fechar PS4 Package Assistant", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu

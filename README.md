@@ -14,13 +14,13 @@ The application does not include package files or game content.
 ## Use the macOS app
 
 1. Open `PS4-Package-Assistant.dmg` from the GitHub Releases page.
-2. Drag `PS4-Package-Assistant.app` and `Stop-PS4-Package-Assistant.app` into Applications.
-3. Open `PS4-Package-Assistant.app` and choose the `.pkg` file.
-4. Check the local IP addresses and click **Enviar ao PS4**.
+2. Drag `PS4-Package-Assistant.app` into Applications.
+3. Open `PS4-Package-Assistant.app`; the interface opens in its own window. Choose the `.pkg` file.
+4. Check the local IP addresses and click **Enviar ao PS4**. To swap the file mid-transfer, click **Interromper upload**.
 5. Keep the Mac awake and connected until the PS4 download finishes.
-6. Open `Stop-PS4-Package-Assistant.app` when you want to stop the local servers.
+6. To stop the local servers, use **Parar servidor de pacotes** in the app menu. Quitting the app also stops them.
 
-The app opens its interface at <http://localhost:4173>. The package server listens on port `8080`; the PS4 API uses port `12800`. While a transfer is prepared, port `8080` serves only the selected package and requires a random access token plus the PS4 IP entered in the interface. The macOS firewall may ask to allow incoming connections.
+The app serves its interface on <http://127.0.0.1:4173> inside its own window. The package server listens on port `8080`; the PS4 API uses port `12800`. While a transfer is prepared, port `8080` serves only the selected package and requires a random access token plus the PS4 IP entered in the interface. The macOS firewall may ask to allow incoming connections.
 
 If macOS blocks the unsigned, non-notarized app, control-click it, choose **Open**, and confirm. Node.js 18 or later must be installed; the app searches Homebrew, NVM, Volta, asdf, and mise locations.
 

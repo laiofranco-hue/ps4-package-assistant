@@ -9,7 +9,23 @@ const UI_PORT = Number(process.env.UI_PORT || 4173);
 const FILE_PORT = Number(process.env.FILE_PORT || 8080);
 let selectedFile = '';
 let allowedPs4Ip = '';
-const fileAccessToken = crypto.randomBytes(32).toString('hex');
+let fileAccessToken = crypto.randomBytes(32).toString('hex');
+const activeDownloads = new Set();
+
+function cancelTransfer() {
+  selectedFile = '';
+  allowedPs4Ip = '';
+  fileAccessToken = crypto.randomBytes(32).toString('hex');
+  for (const stop of activeDownloads) stop();
+  activeDownloads.clear();
+}
+function pipeFile(res, options) {
+  const stream = fs.createReadStream(selectedFile, options);
+  const stop = () => { stream.destroy(); res.destroy(); };
+  activeDownloads.add(stop);
+  res.on('close', () => activeDownloads.delete(stop));
+  stream.pipe(res);
+}
 
 function localIPv4s() {
   return Object.values(os.networkInterfaces()).flat().filter(x => x && x.family === 'IPv4' && !x.internal).map(x => x.address);
@@ -41,6 +57,10 @@ const ui = http.createServer(async (req, res) => {
       return json(res, 200, { selectedFile, name: path.basename(selectedFile) });
     });
     return;
+  }
+  if (req.method === 'POST' && url.pathname === '/api/cancel') {
+    cancelTransfer();
+    return json(res, 200, { cancelled: true });
   }
   if (req.method === 'POST' && url.pathname === '/api/install') {
     try {
@@ -91,11 +111,11 @@ const files = http.createServer(async (req, res) => {
     end = Math.min(end, stat.size - 1);
     res.writeHead(206, { ...headers, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${stat.size}` });
     if (req.method === 'HEAD') return res.end();
-    return fs.createReadStream(selectedFile, { start, end }).pipe(res);
+    return pipeFile(res, { start, end });
   }
   res.writeHead(200, { ...headers, 'Content-Length': stat.size });
   if (req.method === 'HEAD') return res.end();
-  fs.createReadStream(selectedFile).pipe(res);
+  pipeFile(res, {});
 });
 
 ui.on('error', err => { console.error(`Não foi possível iniciar a interface na porta ${UI_PORT}: ${err.message}`); process.exit(1); });
