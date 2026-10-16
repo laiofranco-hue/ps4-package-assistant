@@ -15,10 +15,12 @@ fi
 NODE_BIN=""
 setopt nonomatch
 for candidate in /opt/homebrew/bin/node /usr/local/bin/node "$HOME"/.nvm/versions/node/*/bin/node "$HOME"/.volta/bin/node "$HOME"/.asdf/shims/node "$HOME"/.local/share/mise/shims/node; do
-  if [[ -x "$candidate" ]]; then NODE_BIN="$candidate"; break; fi
+  [[ -x "$candidate" ]] || continue
+  NODE_MAJOR="$("$candidate" -p 'Number(process.versions.node.split(".")[0])' 2>/dev/null || print 0)"
+  if [[ "$NODE_MAJOR" == <-> ]] && (( NODE_MAJOR >= 18 )); then NODE_BIN="$candidate"; break; fi
 done
 if [[ -z "$NODE_BIN" ]]; then
-  osascript -e 'display alert "Node.js not found" message "Install Node.js and open PS4 Package Assistant again."'
+  osascript -e 'display alert "Compatible Node.js not found" message "Install Node.js 18 or later and open PS4 Package Assistant again."'
   exit 1
 fi
 nohup "$NODE_BIN" "$RESOURCES/server.js" >"$LOG_FILE" 2>&1 </dev/null &
