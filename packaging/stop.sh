@@ -13,4 +13,3 @@ if [[ -f "$PID_FILE" ]]; then
   fi
   rm -f "$PID_FILE"
 fi
-osascript -e 'display notification "Local server stopped." with title "PS4 Package Assistant"'
