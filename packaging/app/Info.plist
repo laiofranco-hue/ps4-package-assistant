@@ -6,6 +6,8 @@
 	<string>pt-BR</string>
 	<key>CFBundleExecutable</key>
 	<string>PS4-Package-Assistant</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.laiofranco.ps4-package-assistant</string>
 	<key>CFBundleInfoDictionaryVersion</key>

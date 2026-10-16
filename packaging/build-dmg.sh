@@ -8,6 +8,7 @@ mkdir -p "$ROOT/dist" "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O -swift-version 5 -target "$(uname -m)-apple-macos11.0" -framework Cocoa -framework WebKit \
   -o "$APP/Contents/MacOS/PS4-Package-Assistant" "$ROOT/packaging/app/main.swift"
 cp "$ROOT/packaging/app/Info.plist" "$APP/Contents/Info.plist"
+cp "$ROOT/packaging/app/AppIcon.icns" "$APP/Contents/Resources/"
 cp "$ROOT/server.js" "$ROOT/index.html" "$APP/Contents/Resources/"
 cp "$ROOT/packaging/start.sh" "$ROOT/packaging/stop.sh" "$APP/Contents/Resources/"
 chmod +x "$APP/Contents/MacOS/PS4-Package-Assistant" "$APP/Contents/Resources/start.sh" "$APP/Contents/Resources/stop.sh"
