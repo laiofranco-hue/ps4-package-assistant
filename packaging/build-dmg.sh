@@ -5,25 +5,27 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 APP="$STAGE/PS4-Package-Assistant.app"
 STOP="$STAGE/Stop-PS4-Package-Assistant.app"
-mkdir -p "$ROOT/dist"
-osacompile -o "$APP" "$ROOT/packaging/start.applescript"
+mkdir -p "$ROOT/dist" "$APP/Contents/MacOS" "$APP/Contents/Resources"
 osacompile -o "$STOP" "$ROOT/packaging/stop.applescript"
-mkdir -p "$APP/Contents/Resources" "$STOP/Contents/Resources"
+mkdir -p "$STOP/Contents/Resources"
+swiftc -O -swift-version 5 -target "$(uname -m)-apple-macos11.0" -framework Cocoa -framework WebKit \
+  -o "$APP/Contents/MacOS/PS4-Package-Assistant" "$ROOT/packaging/app/main.swift"
+cp "$ROOT/packaging/app/Info.plist" "$APP/Contents/Info.plist"
 cp "$ROOT/server.js" "$ROOT/index.html" "$APP/Contents/Resources/"
 cp "$ROOT/packaging/start.sh" "$APP/Contents/Resources/start.sh"
 cp "$ROOT/packaging/stop.sh" "$STOP/Contents/Resources/stop.sh"
-chmod +x "$APP/Contents/Resources/start.sh" "$STOP/Contents/Resources/stop.sh"
-python3 - "$APP" "$STOP" <<'PY'
+chmod +x "$APP/Contents/MacOS/PS4-Package-Assistant" "$APP/Contents/Resources/start.sh" "$STOP/Contents/Resources/stop.sh"
+codesign --force --sign - "$APP"
+python3 - "$STOP" <<'PY'
 import shutil, sys
 from pathlib import Path
-for app in map(Path, sys.argv[1:]):
-    shutil.rmtree(app / 'Contents' / '_CodeSignature', ignore_errors=True)
+shutil.rmtree(Path(sys.argv[1]) / 'Contents' / '_CodeSignature', ignore_errors=True)
 PY
 cat > "$STAGE/INSTALL.txt" <<'TXT'
 PS4 Package Assistant para Mac
 
 1. Arraste PS4-Package-Assistant.app e Stop-PS4-Package-Assistant.app para Aplicativos.
-2. Abra PS4-Package-Assistant.app. A interface local abre no navegador.
+2. Abra PS4-Package-Assistant.app. A interface abre em uma janela do próprio app.
 3. Selecione o PKG, confira os IPs e envie ao PS4.
 4. Mantenha o Mac ligado e sem repouso até o download terminar.
 5. Abra Stop-PS4-Package-Assistant.app para desligar os servidores locais.

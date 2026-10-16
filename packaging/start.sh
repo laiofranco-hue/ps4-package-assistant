@@ -8,7 +8,6 @@ if [[ -f "$PID_FILE" ]]; then
   IFS='|' read -r PID SERVER_PATH < "$PID_FILE"
   COMMAND="$(ps -p "$PID" -o command= 2>/dev/null)"
   if [[ -n "$COMMAND" && "$COMMAND" == *"$SERVER_PATH"* ]] && lsof -n -a -p "$PID" -iTCP:4173 -sTCP:LISTEN >/dev/null 2>&1 && lsof -n -a -p "$PID" -iTCP:8080 -sTCP:LISTEN >/dev/null 2>&1; then
-    open "http://localhost:4173"
     exit 0
   fi
 fi
@@ -36,4 +35,3 @@ if [[ "$READY" != true ]]; then
   osascript -e 'display alert "Could not start" message "Check ~/Library/Application Support/PS4 Package Assistant/server.log. Ports 4173 and 8080 must be free."'
   exit 1
 fi
-open "http://localhost:4173"
