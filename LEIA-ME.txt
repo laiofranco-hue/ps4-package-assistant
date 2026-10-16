@@ -1,0 +1,19 @@
+PS4 Package Assistant (macOS)
+
+Iniciar sem deixar o Terminal aberto
+1. Dê dois cliques em "Iniciar PS4 Package Assistant.command".
+2. A interface abrirá em http://localhost:4173.
+3. Clique em "Selecionar arquivo .pkg" e escolha o pacote.
+4. Confira os IPs do PS4 e do Mac; os dois precisam estar na mesma rede local.
+5. Deixe o Remote Package Installer aberto no PS4 e clique em "Enviar ao PS4".
+
+Se o macOS perguntar se deseja abrir o arquivo, confirme. Se bloquear por segurança, clique com o botão direito no arquivo, escolha Abrir e confirme novamente.
+
+Para encerrar o servidor, dê dois cliques em "Parar PS4 Package Assistant.command". O servidor continua em segundo plano mesmo se fechar a janela do Terminal que o iniciou.
+
+Mantenha o Mac ligado e sem entrar em repouso até o download terminar. O servidor de pacotes escuta na porta 8080 e a interface local na porta 4173. O macOS pode pedir para permitir conexões de entrada. O log fica em ~/Library/Application Support/PS4 Package Assistant/server.log.
+
+Requisitos: macOS, Node.js 18 ou posterior e o Remote Package Installer ativo no PS4.
+O seletor de arquivo usa o diálogo nativo do macOS (osascript). O app não baixa nem inclui conteúdo de jogos.
+
+Alternativa de uso pelo Terminal: entre nesta pasta e execute `node server.js`; para parar nesse modo, aperte Ctrl+C.
