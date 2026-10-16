@@ -20,9 +20,9 @@ The application does not include package files or game content.
 5. Keep the Mac awake and connected until the PS4 download finishes.
 6. Open `Stop-PS4-Package-Assistant.app` when you want to stop the local servers.
 
-The app opens its interface at <http://localhost:4173>. The package server listens on port `8080`; the PS4 API uses port `12800`. While a transfer is prepared, port `8080` serves only the selected package and accepts requests only from the PS4 IP entered in the interface. The macOS firewall may ask to allow incoming connections.
+The app opens its interface at <http://localhost:4173>. The package server listens on port `8080`; the PS4 API uses port `12800`. While a transfer is prepared, port `8080` serves only the selected package and requires a random access token plus the PS4 IP entered in the interface. The macOS firewall may ask to allow incoming connections.
 
-If macOS blocks the unsigned, non-notarized app, control-click it, choose **Open**, and confirm. Node.js must be available at `/opt/homebrew/bin/node` or `/usr/local/bin/node`.
+If macOS blocks the unsigned, non-notarized app, control-click it, choose **Open**, and confirm. Node.js 18 or later must be installed; the app searches Homebrew, NVM, Volta, asdf, and mise locations.
 
 ## Run from source
 

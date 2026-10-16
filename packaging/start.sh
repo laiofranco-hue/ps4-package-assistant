@@ -13,7 +13,8 @@ if [[ -f "$PID_FILE" ]]; then
   fi
 fi
 NODE_BIN=""
-for candidate in /opt/homebrew/bin/node /usr/local/bin/node; do
+setopt nonomatch
+for candidate in /opt/homebrew/bin/node /usr/local/bin/node "$HOME"/.nvm/versions/node/*/bin/node "$HOME"/.volta/bin/node "$HOME"/.asdf/shims/node "$HOME"/.local/share/mise/shims/node; do
   if [[ -x "$candidate" ]]; then NODE_BIN="$candidate"; break; fi
 done
 if [[ -z "$NODE_BIN" ]]; then

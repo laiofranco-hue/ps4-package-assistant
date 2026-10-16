@@ -13,7 +13,7 @@ Para encerrar o servidor, dê dois cliques em "Parar PS4 Package Assistant.comma
 
 Mantenha o Mac ligado e sem entrar em repouso até o download terminar. O servidor de pacotes escuta na porta 8080 e a interface local na porta 4173. O macOS pode pedir para permitir conexões de entrada. O log fica em ~/Library/Application Support/PS4 Package Assistant/server.log.
 
-Requisitos: macOS, Node.js 18 ou posterior e o Remote Package Installer ativo no PS4.
+Requisitos: macOS, Node.js 18 ou posterior e o Remote Package Installer ativo no PS4. O app procura o Node.js em instalações do Homebrew, NVM, Volta, asdf e mise.
 O seletor de arquivo usa o diálogo nativo do macOS (osascript). O app não baixa nem inclui conteúdo de jogos.
 
 Alternativa de uso pelo Terminal: entre nesta pasta e execute `node server.js`; para parar nesse modo, aperte Ctrl+C.

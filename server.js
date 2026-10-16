@@ -2,12 +2,14 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const crypto = require('node:crypto');
 const { execFile } = require('node:child_process');
 
 const UI_PORT = Number(process.env.UI_PORT || 4173);
 const FILE_PORT = Number(process.env.FILE_PORT || 8080);
 let selectedFile = '';
 let allowedPs4Ip = '';
+const fileAccessToken = crypto.randomBytes(32).toString('hex');
 
 function localIPv4s() {
   return Object.values(os.networkInterfaces()).flat().filter(x => x && x.family === 'IPv4' && !x.internal).map(x => x.address);
@@ -49,7 +51,7 @@ const ui = http.createServer(async (req, res) => {
       const validIPv4 = value => /^\d{1,3}(\.\d{1,3}){3}$/.test(value || '') && value.split('.').every(octet => Number(octet) <= 255);
       if (!validIPv4(ps4Ip) || !validIPv4(macIp)) return json(res, 400, { error: 'Informe endereços IPv4 válidos para o PS4 e o Mac.' });
       const filename = path.basename(selectedFile);
-      const packageUrl = `http://${macIp}:${FILE_PORT}/${encodeURIComponent(filename)}`;
+      const packageUrl = `http://${macIp}:${FILE_PORT}/${encodeURIComponent(filename)}?token=${fileAccessToken}`;
       allowedPs4Ip = ps4Ip;
       const response = await fetch(`http://${ps4Ip}:12800/api/install`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -68,9 +70,12 @@ const ui = http.createServer(async (req, res) => {
 const files = http.createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); return res.end(); }
   const peer = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
-  let requestedPath;
-  try { requestedPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); } catch { res.writeHead(400); return res.end('Bad path'); }
-  if (!allowedPs4Ip || peer !== allowedPs4Ip) { res.writeHead(403); return res.end('Package access is limited to the selected PS4'); }
+  let requestedPath, suppliedToken;
+  try { const requestUrl = new URL(req.url, 'http://localhost'); requestedPath = decodeURIComponent(requestUrl.pathname); suppliedToken = requestUrl.searchParams.get('token') || ''; } catch { res.writeHead(400); return res.end('Bad path'); }
+  const tokenBuffer = Buffer.from(suppliedToken);
+  const expectedToken = Buffer.from(fileAccessToken);
+  const tokenIsValid = tokenBuffer.length === expectedToken.length && crypto.timingSafeEqual(tokenBuffer, expectedToken);
+  if (!allowedPs4Ip || peer !== allowedPs4Ip || !tokenIsValid) { res.writeHead(403); return res.end('Package access is limited to the selected PS4 request'); }
   if (!selectedFile || requestedPath !== `/${path.basename(selectedFile)}`) { res.writeHead(404); return res.end('Package not found'); }
   let stat;
   try { stat = await fs.promises.stat(selectedFile); } catch { res.writeHead(404); return res.end('Package unavailable'); }
