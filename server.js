@@ -21,12 +21,14 @@ function findTransfer(suppliedToken) {
   });
 }
 function cancelTransfers() {
+  console.log(`${new Date().toISOString()} cancelamento solicitado (${transfers.length} pacote(s))`);
   selectedFile = '';
   for (const transfer of transfers) for (const stop of transfer.streams) stop();
   transfers.length = 0;
 }
-function removeTransfer(transfer) {
+function removeTransfer(transfer, reason) {
   transfers.splice(transfers.indexOf(transfer), 1);
+  console.log(`${new Date().toISOString()} pacote removido (${reason}) ps4=${transfer.ps4Ip}`);
 }
 function pipeFile(res, transfer, options) {
   const stream = fs.createReadStream(transfer.file, options);
@@ -99,9 +101,11 @@ const ui = http.createServer(async (req, res) => {
       });
       const text = await response.text();
       let result; try { result = JSON.parse(text); } catch { result = { raw: text }; }
-      if (!response.ok || result.status === 'fail') removeTransfer(transfer);
+      console.log(`${new Date().toISOString()} resposta do PS4 ${ps4Ip}: http=${response.status} status=${result.status ?? '-'} erro=${result.error_code ?? result.error ?? '-'}`);
+      if (!response.ok || result.status === 'fail') removeTransfer(transfer, 'PS4 respondeu falha');
       return json(res, response.ok ? 200 : 502, { httpStatus: response.status, result, packageUrl, size: stat.size });
     } catch (e) {
+      console.log(`${new Date().toISOString()} falha ao pedir instalação: ${e.message}`);
       return json(res, 502, { error: `Não foi possível obter resposta do PS4: ${e.message}` });
     }
   }
