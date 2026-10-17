@@ -8,23 +8,43 @@ const { execFile } = require('node:child_process');
 const UI_PORT = Number(process.env.UI_PORT || 4173);
 const FILE_PORT = Number(process.env.FILE_PORT || 8080);
 let selectedFile = '';
-let allowedPs4Ip = '';
-let fileAccessToken = crypto.randomBytes(32).toString('hex');
-const activeDownloads = new Set();
+const transfers = [];
 
-function cancelTransfer() {
-  selectedFile = '';
-  allowedPs4Ip = '';
-  fileAccessToken = crypto.randomBytes(32).toString('hex');
-  for (const stop of activeDownloads) stop();
-  activeDownloads.clear();
+function newToken() {
+  return crypto.randomBytes(32).toString('hex');
 }
-function pipeFile(res, options) {
-  const stream = fs.createReadStream(selectedFile, options);
+function findTransfer(suppliedToken) {
+  const supplied = Buffer.from(suppliedToken);
+  return transfers.find(t => {
+    const expected = Buffer.from(t.token);
+    return expected.length === supplied.length && crypto.timingSafeEqual(expected, supplied);
+  });
+}
+function cancelTransfers() {
+  selectedFile = '';
+  for (const transfer of transfers) for (const stop of transfer.streams) stop();
+  transfers.length = 0;
+}
+function removeTransfer(transfer) {
+  transfers.splice(transfers.indexOf(transfer), 1);
+}
+function pipeFile(res, transfer, options) {
+  const stream = fs.createReadStream(transfer.file, options);
   const stop = () => { stream.destroy(); res.destroy(); };
-  activeDownloads.add(stop);
-  res.on('close', () => activeDownloads.delete(stop));
+  transfer.streams.add(stop);
+  stream.on('error', () => res.destroy());
+  res.on('close', () => transfer.streams.delete(stop));
   stream.pipe(res);
+}
+function logFileRequest(req, res, peer) {
+  const range = req.headers.range || 'inteiro';
+  res.on('close', () => {
+    const outcome = res.writableFinished ? 'ok' : 'interrompido';
+    console.log(`${new Date().toISOString()} ${peer} ${req.method} ${res.statusCode} ${range} ${outcome}`);
+  });
+}
+function logDenied(peer, reason) {
+  console.log(`${new Date().toISOString()} ${peer} negado: ${reason}`);
 }
 
 function localIPv4s() {
@@ -59,7 +79,7 @@ const ui = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === 'POST' && url.pathname === '/api/cancel') {
-    cancelTransfer();
+    cancelTransfers();
     return json(res, 200, { cancelled: true });
   }
   if (req.method === 'POST' && url.pathname === '/api/install') {
@@ -70,15 +90,16 @@ const ui = http.createServer(async (req, res) => {
       if (!stat.isFile()) return json(res, 400, { error: 'O caminho selecionado não é um arquivo.' });
       const validIPv4 = value => /^\d{1,3}(\.\d{1,3}){3}$/.test(value || '') && value.split('.').every(octet => Number(octet) <= 255);
       if (!validIPv4(ps4Ip) || !validIPv4(macIp)) return json(res, 400, { error: 'Informe endereços IPv4 válidos para o PS4 e o Mac.' });
-      const filename = path.basename(selectedFile);
-      const packageUrl = `http://${macIp}:${FILE_PORT}/${encodeURIComponent(filename)}?token=${fileAccessToken}`;
-      allowedPs4Ip = ps4Ip;
+      const transfer = { token: newToken(), file: selectedFile, ps4Ip, streams: new Set() };
+      transfers.push(transfer);
+      const packageUrl = `http://${macIp}:${FILE_PORT}/${encodeURIComponent(path.basename(transfer.file))}?token=${transfer.token}`;
       const response = await fetch(`http://${ps4Ip}:12800/api/install`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'direct', packages: [packageUrl] }), signal: AbortSignal.timeout(30000)
       });
       const text = await response.text();
       let result; try { result = JSON.parse(text); } catch { result = { raw: text }; }
+      if (!response.ok || result.status === 'fail') removeTransfer(transfer);
       return json(res, response.ok ? 200 : 502, { httpStatus: response.status, result, packageUrl, size: stat.size });
     } catch (e) {
       return json(res, 502, { error: `Não foi possível obter resposta do PS4: ${e.message}` });
@@ -92,13 +113,13 @@ const files = http.createServer(async (req, res) => {
   const peer = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
   let requestedPath, suppliedToken;
   try { const requestUrl = new URL(req.url, 'http://localhost'); requestedPath = decodeURIComponent(requestUrl.pathname); suppliedToken = requestUrl.searchParams.get('token') || ''; } catch { res.writeHead(400); return res.end('Bad path'); }
-  const tokenBuffer = Buffer.from(suppliedToken);
-  const expectedToken = Buffer.from(fileAccessToken);
-  const tokenIsValid = tokenBuffer.length === expectedToken.length && crypto.timingSafeEqual(tokenBuffer, expectedToken);
-  if (!allowedPs4Ip || peer !== allowedPs4Ip || !tokenIsValid) { res.writeHead(403); return res.end('Package access is limited to the selected PS4 request'); }
-  if (!selectedFile || requestedPath !== `/${path.basename(selectedFile)}`) { res.writeHead(404); return res.end('Package not found'); }
+  const transfer = findTransfer(suppliedToken);
+  if (!transfer) { logDenied(peer, 'token inválido ou pacote já interrompido'); res.writeHead(403); return res.end('Package access is limited to the selected PS4 request'); }
+  if (peer !== transfer.ps4Ip) { logDenied(peer, `IP diferente do PS4 informado (${transfer.ps4Ip})`); res.writeHead(403); return res.end('Package access is limited to the selected PS4 request'); }
+  if (requestedPath !== `/${path.basename(transfer.file)}`) { logDenied(peer, 'nome do arquivo não confere'); res.writeHead(404); return res.end('Package not found'); }
   let stat;
-  try { stat = await fs.promises.stat(selectedFile); } catch { res.writeHead(404); return res.end('Package unavailable'); }
+  try { stat = await fs.promises.stat(transfer.file); } catch { res.writeHead(404); return res.end('Package unavailable'); }
+  logFileRequest(req, res, peer);
   const range = req.headers.range;
   const headers = { 'Accept-Ranges': 'bytes', 'Content-Type': 'application/octet-stream', 'Access-Control-Allow-Origin': '*' };
   if (range) {
@@ -111,11 +132,11 @@ const files = http.createServer(async (req, res) => {
     end = Math.min(end, stat.size - 1);
     res.writeHead(206, { ...headers, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${stat.size}` });
     if (req.method === 'HEAD') return res.end();
-    return pipeFile(res, { start, end });
+    return pipeFile(res, transfer, { start, end });
   }
   res.writeHead(200, { ...headers, 'Content-Length': stat.size });
   if (req.method === 'HEAD') return res.end();
-  pipeFile(res, {});
+  pipeFile(res, transfer, {});
 });
 
 ui.on('error', err => { console.error(`Não foi possível iniciar a interface na porta ${UI_PORT}: ${err.message}`); process.exit(1); });
