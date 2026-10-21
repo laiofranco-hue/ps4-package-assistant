@@ -53,3 +53,13 @@ O token de acesso vai no caminho da URL, antes do nome do pacote. O download em 
 Para uso pelo Terminal, `PKG_FILE` pode indicar o caminho local do pacote antes de iniciar `node server.js`. Não feche o servidor durante o download.
 
 Teste de regressão: `node --test test-transfer.cjs`.
+
+## Converter ISO de PS2
+
+No primeiro passo, abra **Converter ISO de PS2 em PKG**, selecione a ISO e escolha nome, emulador (Jak v2 ou Rogue v1) e resolução (1× ou 2×). Clique em **Converter em PKG**. O registro mostra as etapas; o botão de cancelar interrompe a conversão e preserva a ISO. O PKG concluído fica selecionado no envio, que continua sendo uma ação separada.
+
+A integração usa [easy-ps2-fpkg v1.2.0](https://github.com/spiral009/easy-ps2-fpkg/releases/tag/v1.2.0). No primeiro uso em Mac Apple Silicon, baixa o executável oficial, verifica seu SHA-256 fixado antes de executar e aplica assinatura local. O executável fica em Application Support/PS4 Package Assistant/converter. Os arquivos de emulador são obtidos pela própria ferramenta. Não há jogos ou emuladores no repositório ou no DMG. A conversão integrada está disponível em Mac Apple Silicon; o envio de PKG continua independente.
+
+Os resultados vão para `~/.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/PS2-PKG/`, em uma subpasta exclusiva por conversão. Isso evita iCloud Drive e sobrescrita de pacotes anteriores. Fechar o app interrompe conversões em andamento. Nenhum pacote é enviado automaticamente e nenhum conteúdo é publicado no GitHub. A validação do pacote não comprova compatibilidade do jogo no PS4.
+
+Validação: `node --test test-conversion.cjs test-transfer.cjs`. `ISO_FILE` permite selecionar a ISO ao iniciar pelo Terminal, sem mudar o seletor do app.

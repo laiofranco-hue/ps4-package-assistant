@@ -1,0 +1,48 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { Conversion } = require('./conversion');
+
+test('conversion validates options, isolates output, and selects the finished package', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'conversion-test-'));
+  t.after(() => fs.rmSync(root, {recursive:true,force:true}));
+  const iso = path.join(root, 'game with spaces.iso'); fs.writeFileSync(iso, 'untouched');
+  const fake = path.join(root, 'converter');
+  fs.writeFileSync(fake, `#!${process.execPath}\nconst fs=require('fs'),path=require('path');const args=process.argv.slice(2);const out=args[args.indexOf('--out')+1];fs.writeFileSync(path.join(out,'args.json'),JSON.stringify(args));fs.writeFileSync(path.join(out,'game.pkg'),Buffer.from('7f434e54010203','hex'));console.log('30/30 checks OK');`, {mode:0o700});
+  let selected;
+  const c = new Conversion({executable:fake,outputRoot:path.join(root,'out'),pickFile:async()=>iso,onComplete:p=>selected=p});
+  await assert.rejects(c.start(), /Selecione/);
+  await c.select();
+  await assert.rejects(c.start({emulator:'bad'}),/inválida/);
+  const title = 'Title $(touch NO) `noop`';
+  await c.start({title,emulator:'Rogue v1',resolution:'1x1'});
+  await assert.rejects(c.start(), /andamento/);
+  await c.done;
+  assert.equal(c.state().status,'success');
+  assert.equal(selected,c.state().output);
+  const args=JSON.parse(fs.readFileSync(path.join(path.dirname(selected),'args.json')));
+  assert.equal(args[0],iso);assert.equal(args.at(-1),title);
+  assert.equal(fs.readFileSync(iso,'utf8'),'untouched');
+  const first=selected;await c.start();await c.done;
+  assert.notEqual(first,selected);assert.ok(fs.existsSync(first));
+});
+
+test('failure and cancellation never select incomplete output or delete the ISO', async t => {
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'conversion-fail-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const iso=path.join(root,'game.iso');fs.writeFileSync(iso,'source');
+  const fake=path.join(root,'converter');
+  fs.writeFileSync(fake,`#!${process.execPath}\nsetTimeout(()=>process.exit(2),100);`,{mode:0o700});
+  let selected=false;
+  const c=new Conversion({executable:fake,outputRoot:path.join(root,'out'),pickFile:async()=>iso,onComplete:()=>selected=true});
+  await c.select();await c.start();await c.done;
+  assert.equal(c.state().status,'error');assert.equal(selected,false);
+  fs.writeFileSync(fake,`#!${process.execPath}\nsetInterval(()=>{},1000);`,{mode:0o700});
+  await c.start();
+  for(let i=0;i<100&&!c.child;i++)await new Promise(r=>setTimeout(r,10));
+  c.cancel();await c.done;
+  assert.equal(c.state().status,'cancelled');assert.equal(selected,false);assert.equal(fs.readFileSync(iso,'utf8'),'source');
+  assert.deepEqual(fs.readdirSync(path.join(root,'out')),[]);
+});
