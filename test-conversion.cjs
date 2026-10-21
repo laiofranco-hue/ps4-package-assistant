@@ -27,6 +27,12 @@ test('conversion validates options, isolates output, and selects the finished pa
   assert.equal(fs.readFileSync(iso,'utf8'),'untouched');
   const first=selected;await c.start();await c.done;
   assert.notEqual(first,selected);assert.ok(fs.existsSync(first));
+  const calls=[];
+  const restored=new Conversion({outputRoot:path.join(root,'out'),open:async(...args)=>calls.push(args)});
+  assert.equal(restored.state().lastOutput,selected);
+  await restored.reveal(); assert.deepEqual(calls[0],['/usr/bin/open',['-R',selected]]);
+  await restored.reveal(true); assert.deepEqual(calls[1],['/usr/bin/open',[path.join(root,'out')]]);
+  fs.unlinkSync(selected);assert.equal(restored.state().lastOutput,'');
 });
 
 test('failure and cancellation never select incomplete output or delete the ISO', async t => {

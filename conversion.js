@@ -9,16 +9,29 @@ const VERSION = 'v1.2.0';
 const DIGEST = '2c82143df56710ef8c09d046e3965a2d52f8bb2a83cb2e4729e5b962d7e2847f';
 
 class Conversion {
-  constructor({ onComplete = () => {}, executable, outputRoot, pickFile } = {}) {
+  constructor({ onComplete = () => {}, executable, outputRoot, pickFile, open = run } = {}) {
     this.onComplete = onComplete;
     this.executable = executable;
     this.outputRoot = outputRoot || path.join(os.homedir(), '.codex', '.chatgpt-projects', 'ps4-package-assistant-local', 'outputs', 'PS2-PKG');
     this.pickFile = pickFile || (async () => (await run('/usr/bin/osascript', ['-e', 'POSIX path of (choose file with prompt "Selecione a ISO de PS2")'])).stdout.trim());
+    this.open = open;
+    this.lastOutput = '';
+    try {
+      const saved = JSON.parse(fs.readFileSync(path.join(this.outputRoot, 'last-result.json'), 'utf8'));
+      const relative = path.relative(this.outputRoot, saved.output);
+      if (relative && !relative.startsWith('..') && !path.isAbsolute(relative) && fs.statSync(saved.output).isFile()) this.lastOutput = saved.output;
+    } catch {}
     this.iso = process.env.ISO_FILE || '';
     this.job = { status: 'idle', log: [], error: '', output: '' };
     this.running = false;
   }
-  state() { return { ...this.job, iso: this.iso, log: [...this.job.log], outputRoot: this.outputRoot }; }
+  state() { return { ...this.job, iso: this.iso, log: [...this.job.log], outputRoot: this.outputRoot, lastOutput: fs.existsSync(this.lastOutput) ? this.lastOutput : '' }; }
+  async reveal(folder = false) {
+    const output = this.state().lastOutput;
+    if (!folder && output) await this.open('/usr/bin/open', ['-R', output]);
+    else { await fs.promises.mkdir(this.outputRoot, { recursive: true }); await this.open('/usr/bin/open', [this.outputRoot]); }
+    return { revealed: true };
+  }
   async select() {
     if (this.running) throw new Error('Aguarde ou cancele a conversão atual.');
     let file;
@@ -105,6 +118,10 @@ class Conversion {
         if (magic.toString('hex') !== '7f434e54') throw new Error('O arquivo gerado não tem cabeçalho PKG válido.');
       } finally { await handle.close(); }
       this.controller.signal.throwIfAborted();
+      const marker = path.join(this.outputRoot, 'last-result.json');
+      await fs.promises.writeFile(marker + '.tmp', JSON.stringify({ output: pkg }));
+      await fs.promises.rename(marker + '.tmp', marker);
+      this.lastOutput = pkg;
       this.job.output = pkg;
       this.job.status = 'success';
       this.onComplete(pkg);

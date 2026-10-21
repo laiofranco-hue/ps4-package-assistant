@@ -63,3 +63,5 @@ A integração usa [easy-ps2-fpkg v1.2.0](https://github.com/spiral009/easy-ps2-
 Os resultados vão para `~/.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/PS2-PKG/`, em uma subpasta exclusiva por conversão. Isso evita iCloud Drive e sobrescrita de pacotes anteriores. Fechar o app interrompe conversões em andamento. Nenhum pacote é enviado automaticamente e nenhum conteúdo é publicado no GitHub. A validação do pacote não comprova compatibilidade do jogo no PS4.
 
 Validação: `node --test test-conversion.cjs test-transfer.cjs`. `ISO_FILE` permite selecionar a ISO ao iniciar pelo Terminal, sem mudar o seletor do app.
+
+Depois de converter, use **Mostrar PKG no Finder** para revelar o arquivo ou **Abrir pasta de convertidos** para localizar resultados anteriores. O último resultado é lembrado localmente mesmo depois de reabrir o app; nenhum caminho pessoal é publicado no repositório.

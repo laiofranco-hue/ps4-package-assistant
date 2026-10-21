@@ -81,6 +81,8 @@ const ui = http.createServer(async (req, res) => {
         if (!String(req.headers['content-type']).startsWith('application/json')) return json(res, 415, { error: 'Use JSON.' });
         return json(res, 202, await conversion.start(await readBody(req)));
       }
+      if (req.method === 'POST' && url.pathname === '/api/conversion/reveal') return json(res, 200, await conversion.reveal());
+      if (req.method === 'POST' && url.pathname === '/api/conversion/folder') return json(res, 200, await conversion.reveal(true));
       if (req.method === 'POST' && url.pathname === '/api/conversion/cancel') return json(res, 200, conversion.cancel());
     } catch (e) { return json(res, 400, { error: e.message }); }
     return json(res, 404, { error: 'Comando não encontrado.' });
