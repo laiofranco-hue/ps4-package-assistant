@@ -67,6 +67,14 @@ class Conversion {
     this.cover = ''; this.coverName = '';
     return this.state();
   }
+  async useIso(file) {
+    if (this.running || this.preparingCover) throw new Error('Aguarde ou cancele a conversão atual.');
+    if (path.extname(file).toLowerCase() !== '.iso' || !(await fs.promises.stat(file)).isFile()) throw new Error('Selecione uma ISO de PS2.');
+    if (this.running || this.preparingCover) throw new Error('Aguarde ou cancele a conversão atual.');
+    this.iso = file;
+    this.job = { status: 'idle', log: [], error: '', output: '' };
+    return this.state();
+  }
   async select() {
     if (this.running) throw new Error('Aguarde ou cancele a conversão atual.');
     let file;

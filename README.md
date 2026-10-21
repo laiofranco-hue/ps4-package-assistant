@@ -73,3 +73,17 @@ Na conversão, use **Escolher capa** para selecionar PNG ou JPG. O app mostra um
 ## Plano de evolução
 
 Veja [Plano e passagem de trabalho](docs/PLANO-E-CONTINUACAO.md) para o estado entregue, decisões, propostas de biblioteca/sincronização, novas plataformas e estratégia de implementação. As funções futuras ainda não estão implementadas.
+
+## Biblioteca local — primeira etapa
+
+Use **Adicionar jogos** para escolher arquivos ou **Adicionar pasta** para importar pastas e subpastas do Mac/HD externo. **Incluir convertidos** adiciona a pasta de resultados do conversor. Nenhuma origem é pesquisada antes de você a escolher.
+
+**Sincronizar biblioteca** atualiza o catálogo manualmente; pesquisa e filtros permitem localizar arquivos por nome, plataforma e disponibilidade. A primeira leitura calcula SHA-256 completo; as próximas reutilizam hashes quando os atributos do arquivo não mudam. Você pode cancelar a sincronização, preservando o catálogo anterior. Links simbólicos e diretórios internos ocultos não são percorridos. Origens muito grandes precisam ser divididas em pastas menores.
+
+Arquivos ausentes e HDs desconectados continuam no catálogo. Cópias idênticas são sinalizadas, sem excluir arquivos. Uma mudança de caminho só é associada automaticamente quando existe uma correspondência única pelo hash completo, sem ambiguidade e com a origem anterior disponível. **Retirar origem** remove apenas suas referências do catálogo; não apaga jogos no disco.
+
+**Preparar PS2** seleciona a ISO na conversão existente; **Usar PKG no envio** seleciona o pacote. Nenhuma ação da biblioteca inicia conversão, envio ou exclusão no PS4 automaticamente. ISOs sem identificação pedem confirmação explícita de PS2; PS1, PSP e ROMs retrô ficam somente no catálogo nesta etapa. Formato/identificação não comprovam compatibilidade no console.
+
+O catálogo fica em `~/Library/Application Support/PS4 Package Assistant/library/library.json`, fora do iCloud Drive e do Git. Os caminhos e os arquivos dos jogos permanecem locais. Um catálogo inválido é preservado e sua edição fica bloqueada, sem impedir as funções existentes do app.
+
+Testes: `node --test test-library.cjs test-library-api.cjs test-conversion.cjs test-transfer.cjs`. Para testes isolados do servidor, `LIBRARY_DATA_DIR` define outra pasta de catálogo.

@@ -1,6 +1,6 @@
 # Plano e passagem de trabalho
 
-Atualizado em 21/10/2026. Trabalho pausado a pedido do usuário para continuar depois.
+Atualizado em 21/10/2026. Retomada autorizada: biblioteca funcional primeiro; acabamento visual depois.
 
 ## Estado entregue
 
@@ -17,7 +17,7 @@ Quatro testes automatizados passaram na última alteração funcional. O usuári
 - Arquivos de trabalho e saídas locais fora do iCloud Drive.
 - Manter código e documentação revisados no GitHub e passagem de trabalho compartilhada entre Codex e Claude.
 - Nunca publicar ISO, ROM, PKG de jogo, capas pessoais, BIOS, credenciais, bancos locais ou histórico bruto.
-- Nesta pausa, salvar o plano e as prévias; não começar novas funcionalidades.
+- Na pausa anterior, salvar o plano e as prévias. Na retomada, o usuário confirmou somente a etapa de biblioteca funcional.
 
 ## Experiência proposta
 
@@ -55,9 +55,17 @@ Definir navegação e limites antes de programar, manter visual simples durante 
 
 Essa estratégia foi recomendada; não foi iniciada nenhuma reformulação. Não existe estimativa confiável de economia percentual.
 
+## Etapa entregue após a retomada
+
+O usuário confirmou a implementação da biblioteca funcional com visual simples. Foram adicionados importação de arquivos/pastas, inclusão da pasta de convertidos, sincronização manual, cancelamento, pesquisa, filtros e seleção para conversão de PS2/envio de PKG. O catálogo é persistido localmente, sem mover originais. Duplicados são sinalizados por SHA-256 completo; relocalização exige correspondência única. Indisponibilidade de HD não apaga entradas.
+
+Foram verificadas importação recursiva limitada às origens, persistência, preservação de metadados, origens sobrepostas, links simbólicos, arquivos ausentes/volumes desconectados, cancelamento, catálogo inválido e integração com as funções existentes. A interface foi exercitada com arquivos fictícios, sem conversão real ou envio ao PS4.
+
+Ficam pendentes: acabamento visual e biblioteca por capas, sincronização ao abrir, filas, perfis por jogo e integrações PS1/SNES. O catálogo de outras plataformas não significa suporte à execução ou conversão.
+
 ## Próxima retomada
 
 1. Ler esta passagem, as instruções locais e a nota compartilhada do projeto.
 2. Conferir Git e mudanças de outros agentes; preservar o envio, conversão e Finder que já funcionam.
-3. Confirmar escopo inicial e a estrutura visual com o usuário. Não interpretar o pedido de commit como autorização para implementar toda a lista.
-4. Começar pela biblioteca/sincronização somente após essa confirmação; testar com diretórios pequenos e arquivos de teste antes de indexar coleções reais.
+3. Usar a biblioteca funcional com pastas escolhidas pelo usuário e observar eventuais ajustes. Não interpretar a aprovação dessa etapa como autorização para toda a lista.
+4. Confirmar a próxima etapa antes de avançar para filas ou novas plataformas; manter o acabamento visual para depois dos fluxos principais.

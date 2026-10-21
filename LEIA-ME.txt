@@ -21,3 +21,8 @@ CONVERTER ISO DE PS2 EM PKG (MAC APPLE SILICON)
 No passo Escolha o pacote, abra Converter ISO de PS2 em PKG. Selecione a ISO, confira emulador e resolução e clique em Converter em PKG. O nome do jogo é opcional. Acompanhe o registro ou use Cancelar conversão.
 O conversor é baixado e verificado no primeiro uso. Mantenha internet e o app aberto. Resultados são salvos fora do iCloud Drive, em ~/.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/PS2-PKG/.
 Quando terminar, o PKG fica selecionado para você enviar ao PS4. Conversão bem-sucedida não garante compatibilidade de todos os jogos.
+
+BIBLIOTECA LOCAL
+Use Adicionar jogos ou Adicionar pasta. Incluir convertidos importa a pasta local de PKGs gerados. Sincronizar biblioteca procura novos arquivos somente nas origens escolhidas; não converte nem envia automaticamente.
+Use a pesquisa e os filtros. Preparar PS2 e Usar PKG no envio preenchem os fluxos existentes. Jogos de outros sistemas ficam apenas catalogados nesta etapa.
+HD desconectado e arquivo ausente permanecem no catálogo. Retirar origem não apaga os arquivos originais. A primeira sincronização calcula a identidade completa dos arquivos e pode demorar.

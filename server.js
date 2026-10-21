@@ -11,6 +11,8 @@ let selectedFile = process.env.PKG_FILE || '';
 const transfers = [];
 const { Conversion } = require('./conversion');
 const conversion = new Conversion({ onComplete: file => { selectedFile = file; } });
+const { Library } = require('./library');
+const library = new Library({ dataDir: process.env.LIBRARY_DATA_DIR });
 
 function newToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -68,9 +70,52 @@ function readBody(req) {
 
 const ui = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
+  if (req.method === 'GET' && url.pathname === '/library-ui.js') {
+    res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+    return fs.createReadStream(path.join(__dirname, 'library-ui.js')).pipe(res);
+  }
   if (req.method === 'GET' && url.pathname === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res);
+  }
+  if (url.pathname.startsWith('/api/library')) {
+    if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
+    try {
+      if (req.method === 'GET' && url.pathname === '/api/library') return json(res, 200, library.state());
+      if (req.method !== 'POST') return json(res, 405, { error: 'Método não permitido.' });
+      if (!String(req.headers['content-type']).startsWith('application/json')) return json(res, 415, { error: 'Use JSON.' });
+      if (url.pathname === '/api/library/files') return json(res, 202, await library.choose('file'));
+      if (url.pathname === '/api/library/folders') return json(res, 202, await library.choose('folder'));
+      if (url.pathname === '/api/library/outputs') {
+        await fs.promises.mkdir(conversion.outputRoot, { recursive: true });
+        return json(res, 202, await library.add([conversion.outputRoot], 'folder'));
+      }
+      if (url.pathname === '/api/library/sync') return json(res, 202, library.sync());
+      if (url.pathname === '/api/library/cancel') return json(res, 200, library.cancel());
+      const body = await readBody(req);
+      if (url.pathname === '/api/library/remove-source') return json(res, 200, await library.removeSource(body.id));
+      if (url.pathname === '/api/library/use') {
+        const item = await library.item(body.id);
+        if (item.format === 'PKG') {
+          if (!item.validPkg) throw new Error('O arquivo não tem cabeçalho PKG válido.');
+          selectedFile = item.path;
+          return json(res, 200, { kind: 'pkg', title: item.title });
+        }
+        if (item.format === 'ISO' && ['PS2', 'ISO não identificada'].includes(item.platform)) {
+          if (item.platform === 'ISO não identificada' && body.confirmPS2 !== true) throw new Error('Confirme que esta ISO é de PS2 antes de converter.');
+          const selected = await conversion.useIso(item.path);
+          selectedFile = '';
+          return json(res, 200, { kind: 'iso', title: item.title, conversion: selected });
+        }
+        throw new Error('Esta plataforma pode ser catalogada, mas a conversão e o envio ainda não estão integrados.');
+      }
+      if (url.pathname === '/api/library/reveal') {
+        const item = await library.item(body.id);
+        await new Promise((resolve, reject) => execFile('/usr/bin/open', ['-R', item.path], error => error ? reject(error) : resolve()));
+        return json(res, 200, { revealed: true });
+      }
+      return json(res, 404, { error: 'Comando não encontrado.' });
+    } catch (e) { return json(res, 400, { error: e.message }); }
   }
   if (url.pathname.startsWith('/api/conversion')) {
     if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
@@ -176,4 +221,4 @@ files.on('error', err => { console.error(`Não foi possível iniciar o servidor 
 ui.listen(UI_PORT, '127.0.0.1', () => console.log(`Interface: http://localhost:${UI_PORT}`));
 files.listen(FILE_PORT, '0.0.0.0', () => console.log(`Servidor de pacotes na porta ${FILE_PORT}; acesso limitado ao PS4 informado. IPs do Mac: ${localIPv4s().join(', ') || 'não detectado'}`));
 
-for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { conversion.cancel(); Promise.resolve(conversion.done).finally(() => process.exit(0)); });
+for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { conversion.cancel(); library.cancel(); Promise.allSettled([conversion.done, library.done]).finally(() => process.exit(0)); });
