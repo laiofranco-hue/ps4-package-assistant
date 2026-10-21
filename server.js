@@ -7,7 +7,7 @@ const { execFile } = require('node:child_process');
 
 const UI_PORT = Number(process.env.UI_PORT || 4173);
 const FILE_PORT = Number(process.env.FILE_PORT || 8080);
-let selectedFile = '';
+let selectedFile = process.env.PKG_FILE || '';
 let allowedPs4Ip = '';
 let fileAccessToken = crypto.randomBytes(32).toString('hex');
 const activeDownloads = new Set();
@@ -71,7 +71,7 @@ const ui = http.createServer(async (req, res) => {
       const validIPv4 = value => /^\d{1,3}(\.\d{1,3}){3}$/.test(value || '') && value.split('.').every(octet => Number(octet) <= 255);
       if (!validIPv4(ps4Ip) || !validIPv4(macIp)) return json(res, 400, { error: 'Informe endereços IPv4 válidos para o PS4 e o Mac.' });
       const filename = path.basename(selectedFile);
-      const packageUrl = `http://${macIp}:${FILE_PORT}/${encodeURIComponent(filename)}?token=${fileAccessToken}`;
+      const packageUrl = `http://${macIp}:${FILE_PORT}/${fileAccessToken}/${encodeURIComponent(filename)}`;
       allowedPs4Ip = ps4Ip;
       const response = await fetch(`http://${ps4Ip}:12800/api/install`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -91,7 +91,7 @@ const files = http.createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); return res.end(); }
   const peer = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
   let requestedPath, suppliedToken;
-  try { const requestUrl = new URL(req.url, 'http://localhost'); requestedPath = decodeURIComponent(requestUrl.pathname); suppliedToken = requestUrl.searchParams.get('token') || ''; } catch { res.writeHead(400); return res.end('Bad path'); }
+  try { const requestUrl = new URL(req.url, 'http://localhost'); const parts = requestUrl.pathname.split('/'); suppliedToken = parts[1] || ''; requestedPath = '/' + decodeURIComponent(parts.slice(2).join('/')); } catch { res.writeHead(400); return res.end('Bad path'); }
   const tokenBuffer = Buffer.from(suppliedToken);
   const expectedToken = Buffer.from(fileAccessToken);
   const tokenIsValid = tokenBuffer.length === expectedToken.length && crypto.timingSafeEqual(tokenBuffer, expectedToken);

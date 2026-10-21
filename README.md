@@ -45,3 +45,11 @@ The resulting image is written to `dist/PS4-Package-Assistant.dmg`.
 ## Portuguese
 
 Ferramenta local para macOS que seleciona um arquivo `.pkg`, hospeda-o com suporte a leitura por intervalos HTTP e envia o pedido de instalação ao Remote Package Installer do PS4. O aplicativo não inclui jogos nem arquivos PKG. Para instruções em português, consulte [LEIA-ME.txt](LEIA-ME.txt).
+
+## Compatibilidade com downloads do PS4
+
+O token de acesso vai no caminho da URL, antes do nome do pacote. O download em segundo plano do PS4 pode omitir parâmetros de consulta; colocar o token após `?` fazia a leitura inicial funcionar e o download seguinte receber HTTP 403. O acesso continua restrito ao IP selecionado e ao token aleatório.
+
+Para uso pelo Terminal, `PKG_FILE` pode indicar o caminho local do pacote antes de iniciar `node server.js`. Não feche o servidor durante o download.
+
+Teste de regressão: `node --test test-transfer.cjs`.
