@@ -69,3 +69,7 @@ Depois de converter, use **Mostrar PKG no Finder** para revelar o arquivo ou **A
 ### Capa personalizada
 
 Na conversão, use **Escolher capa** para selecionar PNG ou JPG. O app mostra uma prévia e gera uma cópia PNG de 512 × 512 pixels, mantendo a proporção e completando com bordas pretas. A imagem original permanece intacta. **Remover capa** volta à capa padrão. A escolha vale para as conversões da sessão e não altera pacotes já instalados; para atualizar o ícone no PS4 é necessário gerar e instalar o novo PKG.
+
+## Plano de evolução
+
+Veja [Plano e passagem de trabalho](docs/PLANO-E-CONTINUACAO.md) para o estado entregue, decisões, propostas de biblioteca/sincronização, novas plataformas e estratégia de implementação. As funções futuras ainda não estão implementadas.
