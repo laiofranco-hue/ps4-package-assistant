@@ -113,3 +113,7 @@ Os testes de API usam a porta local 12800 e são executados em sequência. `QUEU
 ### ISO sem identificador de inicialização de PS2
 
 Se o conversor informar que não encontrou o serial de inicialização (por exemplo, `SLUS_209.32`), o app mostra essa causa e preserva o registro original. Algumas imagens caseiras iniciam um ELF de emulador sem esse identificador; não são aceitas pelo conversor atual. Isso não comprova corrupção da ISO. Trocar título, capa ou resolução não fornece o identificador ausente. A biblioteca de SNES/retrôs depende de uma integração própria, ainda pendente, e não é implementada pela conversão PS2 existente.
+
+## Prova de SNES em preparação
+
+O [teste de pSNES no PS4](docs/TESTE-SNES-PS4.md) prepara a próxima integração com biblioteca de vários jogos. O pacote do emulador foi conferido localmente; execução, controles e salvamento no console ainda estão pendentes. `scripts/prepare-snes-test.py` copia até três ROMs explicitamente escolhidas para uma pasta local nova e registra hashes, sem instalar ou enviar nada. Essa ferramenta não acrescenta suporte SNES ao conversor PS2 nem ao app instalado.

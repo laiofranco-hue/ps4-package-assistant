@@ -79,3 +79,11 @@ Falhas pausam a fila. Resposta perdida ou progresso indisponível exige conferê
 Validação: 22 testes automatizados de conversor, catálogo, transferência, fila e API; fixture de PS4 com respostas hexadecimais, persistência/reinício, proteção de token, detecção de arquivo alterado e recuperação sem novo pedido. Interface exercitada com arquivos fictícios em 1000 e 520 px, incluindo inclusão, duplicados, cancelamento, nova tentativa, histórico, persistência e foco durante consultas. Sem conversão de jogo real ou novo envio ao console nesta entrega.
 
 Próximo passo: usuário experimentar a fila no app com arquivos escolhidos e validar uma transferência no próprio PS4. PS1/SNES, perfis por jogo, sincronização ao abrir e acabamento visual continuam pendentes; não há autorização implícita para implementar todas as propostas.
+
+## Prova de SNES autorizada e preparada — 21/10/2026
+
+Após confirmar novo envio bem-sucedido do Bomba Patch, o usuário autorizou o próximo passo: selecionar/testar emulador SNES com pequena biblioteca, antes de integrá-lo ao app. Candidato escolhido para prova: pSNES v7.2 do desenvolvedor Cpasjuste, com PKG nativo de PS4 e pasta de ROMs separada. Pacote baixado somente na área local e conferido por tamanho, cabeçalho, content ID e SHA-256 publicado na release.
+
+[Procedimento e critérios de aceitação](TESTE-SNES-PS4.md) documentam fonte, pacote, preparo da biblioteca, instalação, controles e duas formas de salvamento. A ferramenta `scripts/prepare-snes-test.py` prepara cópias de 1–3 arquivos explicitamente escolhidos com manifesto de hashes e verificações pendentes. Não faz rede, não converte jogos em PKG e não altera o app instalado. Dois testes locais passaram com arquivos fictícios.
+
+Pendências reais: console não respondeu nos serviços conhecidos durante a inspeção; o usuário foi solicitado a abrir o Remote Package Installer e disponibilizar FTP do GoldHEN. A ISO SNES Station não está mais no caminho anterior de Downloads; solicitada a pasta atual da ISO/ROMs. Sem arquivos reais selecionados e sem acesso ao console, instalação, jogabilidade, controles e salvamento permanecem **não validados**. Não iniciar integração automática ou afirmar suporte até concluir essa prova com o usuário.
