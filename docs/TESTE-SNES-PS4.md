@@ -1,6 +1,6 @@
 # Prova de SNES no PS4
 
-Preparação em 21/10/2026. Autorização do usuário: testar um emulador com pequena biblioteca antes da integração ao app. **Instalação e cópia de três ROMs confirmadas; execução, controles e salvamento ainda pendentes.** O app atual continua oferecendo catálogo de ROMs; esta etapa não adiciona conversão SNES → PKG nem sincronização remota.
+Preparação em 21/10/2026. Autorização do usuário: testar um emulador com pequena biblioteca antes da integração ao app. **Instalação, biblioteca com três jogos e início de um jogo confirmados; controles, som e salvamento ainda pendentes.** O app atual continua oferecendo catálogo de ROMs; esta etapa não adiciona conversão SNES → PKG nem sincronização remota.
 
 ## Candidato escolhido para o teste
 
@@ -49,8 +49,9 @@ A ferramenta não verifica compatibilidade da ROM, não abre FTP, não instala n
 | Ferramenta de preparação/cópia | Dois testes automatizados com fixtures passaram |
 | ROMs reais selecionadas | Três arquivos da ISO indicada pelo usuário, em cópias locais |
 | Transferência e instalação do pSNES | Confirmadas: bytes completos, erro zero e aplicativo presente |
-| Abertura do pSNES e biblioteca | Pendente |
-| Abertura dos jogos, controle, áudio/vídeo | Pendente |
+| Abertura do pSNES e biblioteca | Confirmadas pelo usuário; foto mostra três jogos |
+| Início de um jogo | Confirmado pelo usuário; não estender aos três jogos |
+| Controles, áudio/vídeo durante o jogo | Pendente |
 | Estado salvo e recarregado após reabrir | Pendente |
 | Salvamento interno do jogo após reabrir | Pendente |
 
@@ -80,3 +81,8 @@ Na prova real, o emulador abriu, mas inicialmente não exibiu os jogos. O arquiv
 A análise do código fixado na release revelou que [o núcleo declara extensões em minúsculas](https://github.com/Cpasjuste/pemu/blob/v7.2/src/cores/psnes/sources/psnes_config.h) e [o leitor de arquivos compara o texto sem converter maiúsculas](https://github.com/Cpasjuste/sscrap/blob/65296f010683f1ff67604654fa34057fa2fd5eda/source/ss_io.cpp). Assim, `.SFC`/`.SMC` podem ser ignoradas. As cópias de teste foram renomeadas para `.sfc`/`.smc`, verificadas por SHA-256 e tiveram seus caminhos atualizados na lista. A ISO e a biblioteca local anterior foram preservadas. A ferramenta local agora aplica essa normalização e testa nomes/bytes/XML com fixtures, inclusive maiúsculas, acentos e `&`.
 
 Após trocar nomes ou lista, fechar completamente e reabrir o pSNES para reconstruir a biblioteca. Confirmar a listagem real antes de marcar a correção como validada. Alterações em `config.cfg` devem ser feitas com o emulador fechado e com backup; preservar as demais configurações e saves.
+
+
+### Resultado após normalização das extensões
+
+Em 21/10/2026, o usuário confirmou que os jogos aparecem e um jogo inicia. Foto fornecida confirma três entradas na lista. O ajuste de extensões fica validado para essa biblioteca de teste. A foto permanece somente na área privada; não foi incluída no repositório. Ainda pendentes: identificação de qual jogo foi iniciado, testes dos demais jogos, controles, áudio/vídeo e salvamento após reabrir o emulador. Não afirmar compatibilidade geral de SNES a partir desse resultado.
