@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import stat
 import tempfile
+import xml.etree.ElementTree as ET
 
 DEFAULT_ROOT = Path.home() / '.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/SNES-tests'
 
@@ -38,7 +39,8 @@ def prepare(roms, output_root=DEFAULT_ROOT):
         target.mkdir()
         items = []
         for source in sources:
-            copied = target / source.name
+            # pEMU's file filter is case-sensitive: uppercase .SFC/.SMC are ignored.
+            copied = target / (source.stem + source.suffix.lower())
             digest = hashlib.sha256()
             fd = os.open(source, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
             with os.fdopen(fd, 'rb') as original, copied.open('xb') as output:
@@ -56,8 +58,15 @@ def prepare(roms, output_root=DEFAULT_ROOT):
             copied_hash = hashlib.sha256(copied.read_bytes()).hexdigest()
             if copied_hash != digest.hexdigest():
                 raise ValueError('A cópia não confere com os bytes lidos da origem.')
-            items.append({'file': 'roms/' + source.name, 'size': copied.stat().st_size, 'sha256': copied_hash,
-                          'ps4_target': '/data/psnes/roms/' + source.name})
+            items.append({'file': 'roms/' + copied.name, 'size': copied.stat().st_size, 'sha256': copied_hash,
+                          'ps4_target': '/data/psnes/roms/' + copied.name})
+        gamelist = ET.Element('gameList')
+        for item in items:
+            game = ET.SubElement(gamelist, 'game')
+            name = Path(item['file']).name
+            ET.SubElement(game, 'path').text = './' + name
+            ET.SubElement(game, 'name').text = Path(name).stem
+        ET.ElementTree(gamelist).write(target / 'gamelist.xml', encoding='utf-8', xml_declaration=True)
         manifest = {'version': 1, 'emulator': 'pSNES', 'release': 'v7.2', 'title_id': 'PSNE00001',
                     'status': 'prepared-locally-not-tested-on-console', 'roms': items,
                     'checks': {k: 'pending' for k in ('installation', 'launch', 'library', 'controls', 'audio_video', 'save_state', 'in_game_save')}}

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 
 spec = importlib.util.spec_from_file_location('prepare_snes', Path(__file__).with_name('prepare-snes-test.py'))
 module = importlib.util.module_from_spec(spec)
@@ -14,8 +15,8 @@ class PrepareTests(unittest.TestCase):
     def test_explicit_selection_copies_preserves_and_never_claims_console_validation(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            a = root / 'Teste com acento ação.sfc'
-            b = root / 'Segundo.smc'
+            a = root / 'Teste & ação.SFC'
+            b = root / 'Segundo.SMC'
             a.write_bytes(b'fictional test fixture A')
             b.write_bytes(b'fictional test fixture B')
             untouched = root / 'Outro.sfc'
@@ -24,13 +25,16 @@ class PrepareTests(unittest.TestCase):
             result = module.prepare([a, b], output)
             data = json.loads((result / 'manifest.json').read_text())
             self.assertEqual(len(data['roms']), 2)
+            games = ET.parse(result / 'roms/gamelist.xml').getroot().findall('game')
+            self.assertEqual([g.findtext('path') for g in games], ['./' + a.stem + '.sfc', './' + b.stem + '.smc'])
+            self.assertEqual(games[0].findtext('name'), a.stem)
             self.assertEqual(set(data['checks'].values()), {'pending'})
             self.assertEqual(data['status'], 'prepared-locally-not-tested-on-console')
             self.assertFalse((result / 'roms' / untouched.name).exists())
             for original in (a, b):
-                self.assertEqual((result / 'roms' / original.name).read_bytes(), original.read_bytes())
+                self.assertEqual((result / 'roms' / (original.stem + original.suffix.lower())).read_bytes(), original.read_bytes())
             self.assertEqual(data['roms'][0]['sha256'], hashlib.sha256(a.read_bytes()).hexdigest())
-            self.assertEqual(data['roms'][0]['ps4_target'], '/data/psnes/roms/' + a.name)
+            self.assertEqual(data['roms'][0]['ps4_target'], '/data/psnes/roms/' + a.stem + '.sfc')
             self.assertNotIn(str(root), (result / 'manifest.json').read_text())
             again = module.prepare([a], output)
             self.assertNotEqual(result, again)

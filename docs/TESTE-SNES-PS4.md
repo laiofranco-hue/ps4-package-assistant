@@ -28,7 +28,7 @@ Ferramenta local, sem dependências adicionais:
 python3 scripts/prepare-snes-test.py '/caminho/do/primeiro.sfc' '/caminho/do/segundo.smc'
 ```
 
-Cada execução cria uma pasta `snes-teste-*` em `~/.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/SNES-tests/`, contendo `roms/` e `manifest.json`. Copia apenas os arquivos escolhidos, verifica SHA-256 das cópias, rejeita nomes repetidos e não altera originais ou resultados anteriores. O manifesto não registra caminhos pessoais da origem. Todos os resultados de console ficam marcados como pendentes.
+Cada execução cria uma pasta `snes-teste-*` em `~/.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/SNES-tests/`, contendo `roms/`, `roms/gamelist.xml` e `manifest.json`. Copia apenas os arquivos escolhidos, normaliza as extensões para minúsculas sem mudar os bytes, cria a lista XML com caminhos relativos, verifica SHA-256 das cópias e rejeita nomes repetidos e não altera originais ou resultados anteriores. O manifesto não registra caminhos pessoais da origem. Todos os resultados de console ficam marcados como pendentes.
 
 A ferramenta não verifica compatibilidade da ROM, não abre FTP, não instala nada e não prepara PKG de jogos. A opção `--output-root` permite testar outro diretório local; Desktop, Documents e raízes comuns de nuvem são recusados. Essa proteção não detecta todo provedor de nuvem personalizado: usar a raiz local padrão é a opção recomendada.
 
@@ -71,3 +71,12 @@ O usuário disponibilizou Remote Package Installer, FTP e a ISO em Downloads. O 
 Foram extraídas somente três ROMs selecionadas da ISO, com preservação dos atributos da origem, e preparadas em uma pasta local exclusiva. As três cópias foram enviadas por FTP para `/data/psnes/roms/`, em nomes temporários únicos, verificadas por releitura com SHA-256 e então renomeadas. Nenhum arquivo existente foi sobrescrito. O servidor temporário do teste foi encerrado somente após confirmar a transferência e a instalação.
 
 O usuário foi solicitado a abrir pSNES, confirmar a lista e testar imagem, áudio e botões. Essa confirmação e os testes de estado/salvamento interno continuam pendentes. Recibos, nomes dos jogos, hashes das ROMs e caminho da ISO ficam somente na área local de trabalho e na nota privada; não são distribuídos com o projeto. A integração ao app aguarda o resultado da prova.
+
+
+### Compatibilidade da biblioteca com pSNES 7.2
+
+Na prova real, o emulador abriu, mas inicialmente não exibiu os jogos. O arquivo de configuração gerado continha `ROMS` vazio. Foi preservado em backup e recebeu o caminho explícito de SNES; uma lista `gamelist.xml` também foi adicionada. Isso, isoladamente, não resolveu a listagem.
+
+A análise do código fixado na release revelou que [o núcleo declara extensões em minúsculas](https://github.com/Cpasjuste/pemu/blob/v7.2/src/cores/psnes/sources/psnes_config.h) e [o leitor de arquivos compara o texto sem converter maiúsculas](https://github.com/Cpasjuste/sscrap/blob/65296f010683f1ff67604654fa34057fa2fd5eda/source/ss_io.cpp). Assim, `.SFC`/`.SMC` podem ser ignoradas. As cópias de teste foram renomeadas para `.sfc`/`.smc`, verificadas por SHA-256 e tiveram seus caminhos atualizados na lista. A ISO e a biblioteca local anterior foram preservadas. A ferramenta local agora aplica essa normalização e testa nomes/bytes/XML com fixtures, inclusive maiúsculas, acentos e `&`.
+
+Após trocar nomes ou lista, fechar completamente e reabrir o pSNES para reconstruir a biblioteca. Confirmar a listagem real antes de marcar a correção como validada. Alterações em `config.cfg` devem ser feitas com o emulador fechado e com backup; preservar as demais configurações e saves.
