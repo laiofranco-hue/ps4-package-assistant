@@ -31,7 +31,8 @@ function cancelTransfers() {
   transfers.length = 0;
 }
 function removeTransfer(transfer, reason) {
-  transfers.splice(transfers.indexOf(transfer), 1);
+  const index = transfers.indexOf(transfer);
+  if (index !== -1) transfers.splice(index, 1);
   console.log(`${new Date().toISOString()} pacote removido (${reason}) ps4=${transfer.ps4Ip}`);
 }
 function pipeFile(res, transfer, options) {
@@ -68,15 +69,107 @@ function readBody(req) {
   });
 }
 
+async function installFile(file, { ps4Ip, macIp }, remember = () => {}) {
+  if (!file) throw new Error('Selecione um arquivo PKG primeiro.');
+  const stat = await fs.promises.stat(file);
+  if (!stat.isFile()) throw new Error('O caminho selecionado não é um arquivo.');
+  const validIPv4 = value => /^\d{1,3}(\.\d{1,3}){3}$/.test(value || '') && value.split('.').every(octet => Number(octet) <= 255);
+  if (!validIPv4(ps4Ip) || !validIPv4(macIp)) throw new Error('Informe endereços IPv4 válidos para o PS4 e o Mac.');
+  const transfer = { token: newToken(), file: file, ps4Ip, streams: new Set() };
+  remember(transfer.token);
+  transfer.original = { size: stat.size, mtimeMs: stat.mtimeMs, ctimeMs: stat.ctimeMs };
+  transfers.push(transfer);
+  const packageUrl = `http://${macIp}:${FILE_PORT}/${transfer.token}/${encodeURIComponent(path.basename(transfer.file))}`;
+  const response = await fetch(`http://${ps4Ip}:12800/api/install`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'direct', packages: [packageUrl] }), signal: AbortSignal.timeout(30000)
+  });
+  const text = await response.text();
+  let result; try { result = JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token))); } catch { result = { raw: text }; }
+  if (result.status === 'fail' && result.error_code != null) {
+    const code = typeof result.error_code === 'number' ? '0x' + result.error_code.toString(16).toUpperCase() : result.error_code;
+    result.error = `O PS4 recusou a instalação (${code}).` + (String(code).toLowerCase() === '0x80990015' ? ' Pode existir uma instalação ou download anterior deste pacote. Confira as notificações de Downloads no PS4 e remova apenas a tentativa falhada correspondente antes de tentar novamente.' : ' Confira as notificações do PS4 para mais detalhes.');
+  }
+  console.log(`${new Date().toISOString()} resposta do PS4 ${ps4Ip}: http=${response.status} status=${result.status ?? '-'} erro=${result.error_code ?? result.error ?? '-'}`);
+  if (!response.ok || result.status === 'fail') removeTransfer(transfer, 'PS4 respondeu falha');
+  return { httpStatus: response.status, result, packageUrl, size: stat.size };
+}
+const { TaskQueue } = require('./queue');
+const queuedConversion = new Conversion({ onComplete: file => { selectedFile = file; conversion.lastOutput = file; } });
+const queue = new TaskQueue({
+  dataDir: process.env.QUEUE_DATA_DIR,
+  busy: () => conversion.running || conversion.preparingCover || manualInstalling || manualConversionRequests > 0,
+  install: installFile,
+  progress: async (ip, id) => {
+    const response = await fetch(`http://${ip}:12800/api/get_task_progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: id }), signal: AbortSignal.timeout(15000) });
+    const text = await response.text();
+    if (!response.ok) throw new Error('Consulta ao PS4 falhou. Mantenha o instalador aberto e consulte novamente.');
+    return JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token)));
+  },
+  runConversion: async (job, update, signal) => {
+    await queuedConversion.useIso(job.file);
+    const oldCover = queuedConversion.cover;
+    queuedConversion.cover = job.options.cover;
+    try {
+      signal.throwIfAborted();
+      await queuedConversion.start(job.options);
+      if (signal.aborted) queuedConversion.cancel();
+      const timer = setInterval(() => update(queuedConversion.state()), 700);
+      try { await queuedConversion.done; } finally { clearInterval(timer); update(queuedConversion.state()); }
+      if (queuedConversion.job.status !== 'success') throw new Error(queuedConversion.job.error || 'Conversão cancelada.');
+      return queuedConversion.job.output;
+    } finally { queuedConversion.cover = oldCover; }
+  },
+  cancelConversion: () => queuedConversion.cancel()
+});
+let manualInstalling = false;
+let manualConversionRequests = 0;
+// Recover only the exact queued file, never publish a changed path after restart.
+for (const job of queue.jobs) {
+  if (job.kind !== 'send' || !['attention', 'success'].includes(job.status) || !/^[a-f0-9]{64}$/.test(job.token || '')) continue;
+  try {
+    const stat = fs.statSync(job.file);
+    if (stat.isFile() && ['size', 'mtimeMs', 'ctimeMs'].every(k => stat[k] === job.original[k])) transfers.push({ token: job.token, file: job.file, ps4Ip: job.options.ps4Ip, original: job.original, streams: new Set() });
+  } catch {}
+}
+
 const ui = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (req.method === 'GET' && url.pathname === '/library-ui.js') {
+  if (req.method === 'POST' && req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
+  if (req.method === 'GET' && ['/library-ui.js', '/queue-ui.js'].includes(url.pathname)) {
     res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
-    return fs.createReadStream(path.join(__dirname, 'library-ui.js')).pipe(res);
+    return fs.createReadStream(path.join(__dirname, url.pathname.slice(1))).pipe(res);
   }
   if (req.method === 'GET' && url.pathname === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res);
+  }
+  if (url.pathname.startsWith('/api/queue')) {
+    if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
+    try {
+      if (req.method === 'GET' && url.pathname === '/api/queue') return json(res, 200, queue.state());
+      if (req.method !== 'POST') return json(res, 405, { error: 'Método não permitido.' });
+      if (!String(req.headers['content-type']).startsWith('application/json')) return json(res, 415, { error: 'Use JSON.' });
+      const body = await readBody(req);
+      if (url.pathname === '/api/queue/add') {
+        const kind = body.kind;
+        const file = kind === 'convert' ? conversion.iso : selectedFile;
+        const options = kind === 'convert' ? { title: body.title, emulator: body.emulator, resolution: body.resolution, cover: conversion.cover } : { ps4Ip: body.ps4Ip, macIp: body.macIp };
+        return json(res, 201, await queue.add({ kind, file, options }));
+      }
+      if (url.pathname === '/api/queue/start') return json(res, 202, queue.start());
+      if (url.pathname === '/api/queue/pause') return json(res, 200, queue.pause());
+      if (url.pathname === '/api/queue/cancel') return json(res, 200, queue.cancel(body.id));
+      if (url.pathname === '/api/queue/retry') return json(res, 200, await queue.retry(body.id, body.confirm));
+      if (url.pathname === '/api/queue/recheck') return json(res, 202, await queue.recheck(body.id));
+      if (url.pathname === '/api/queue/use-output') {
+        const job = queue.jobs.find(j => j.id === body.id && j.kind === 'convert' && j.status === 'success');
+        if (!job) throw new Error('Resultado não encontrado.');
+        await fs.promises.access(job.output); selectedFile = job.output;
+        return json(res, 200, queue.state());
+      }
+      return json(res, 404, { error: 'Comando não encontrado.' });
+    } catch (e) { return json(res, 400, { error: e.message }); }
   }
   if (url.pathname.startsWith('/api/library')) {
     if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
@@ -95,7 +188,9 @@ const ui = http.createServer(async (req, res) => {
       const body = await readBody(req);
       if (url.pathname === '/api/library/remove-source') return json(res, 200, await library.removeSource(body.id));
       if (url.pathname === '/api/library/use') {
+        if (queue.active) throw new Error('Aguarde a tarefa atual da fila terminar.');
         const item = await library.item(body.id);
+        if (queue.active) throw new Error('Aguarde a tarefa atual da fila terminar.');
         if (item.format === 'PKG') {
           if (!item.validPkg) throw new Error('O arquivo não tem cabeçalho PKG válido.');
           selectedFile = item.path;
@@ -119,7 +214,10 @@ const ui = http.createServer(async (req, res) => {
   }
   if (url.pathname.startsWith('/api/conversion')) {
     if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
+    const mutating = req.method === 'POST';
+    if (mutating) manualConversionRequests++;
     try {
+      if (queue.active && req.method === 'POST' && !['/api/conversion/reveal', '/api/conversion/folder'].includes(url.pathname)) throw new Error('Use os controles da fila para a tarefa atual.');
       if (req.method === 'GET' && url.pathname === '/api/conversion/cover') {
         if (!conversion.cover) { res.writeHead(404); return res.end(); }
         res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
@@ -137,6 +235,7 @@ const ui = http.createServer(async (req, res) => {
       if (req.method === 'POST' && url.pathname === '/api/conversion/folder') return json(res, 200, await conversion.reveal(true));
       if (req.method === 'POST' && url.pathname === '/api/conversion/cancel') return json(res, 200, conversion.cancel());
     } catch (e) { return json(res, 400, { error: e.message }); }
+    finally { if (mutating) manualConversionRequests--; }
     return json(res, 404, { error: 'Comando não encontrado.' });
   }
   if (req.method === 'GET' && url.pathname === '/api/state') return json(res, 200, { selectedFile, localIPs: localIPv4s(), filePort: FILE_PORT });
@@ -150,37 +249,26 @@ const ui = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === 'POST' && url.pathname === '/api/cancel') {
-    cancelTransfers();
-    return json(res, 200, { cancelled: true });
+    try {
+      if (queue.active?.kind === 'send') queue.cancel(queue.active.id);
+      cancelTransfers();
+      let changed = false;
+      for (const job of queue.jobs) if (job.token) { delete job.token; changed = true; }
+      if (changed && !queue.readOnly) queue.save();
+      return json(res, 200, { cancelled: true });
+    } catch (e) { return json(res, 500, { error: e.message }); }
   }
   if (req.method === 'POST' && url.pathname === '/api/install') {
+    if (queue.active || manualInstalling) return json(res, 409, { error: 'Aguarde a tarefa atual terminar.' });
+    manualInstalling = true;
     try {
-      const { ps4Ip, macIp } = await readBody(req);
-      if (!selectedFile) return json(res, 400, { error: 'Selecione um arquivo PKG primeiro.' });
-      const stat = await fs.promises.stat(selectedFile);
-      if (!stat.isFile()) return json(res, 400, { error: 'O caminho selecionado não é um arquivo.' });
-      const validIPv4 = value => /^\d{1,3}(\.\d{1,3}){3}$/.test(value || '') && value.split('.').every(octet => Number(octet) <= 255);
-      if (!validIPv4(ps4Ip) || !validIPv4(macIp)) return json(res, 400, { error: 'Informe endereços IPv4 válidos para o PS4 e o Mac.' });
-      const transfer = { token: newToken(), file: selectedFile, ps4Ip, streams: new Set() };
-      transfers.push(transfer);
-      const packageUrl = `http://${macIp}:${FILE_PORT}/${transfer.token}/${encodeURIComponent(path.basename(transfer.file))}`;
-      const response = await fetch(`http://${ps4Ip}:12800/api/install`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'direct', packages: [packageUrl] }), signal: AbortSignal.timeout(30000)
-      });
-      const text = await response.text();
-      let result; try { result = JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token))); } catch { result = { raw: text }; }
-      if (result.status === 'fail' && result.error_code != null) {
-        const code = typeof result.error_code === 'number' ? '0x' + result.error_code.toString(16).toUpperCase() : result.error_code;
-        result.error = `O PS4 recusou a instalação (${code}).` + (String(code).toLowerCase() === '0x80990015' ? ' Pode existir uma instalação ou download anterior deste pacote. Confira as notificações de Downloads no PS4 e remova apenas a tentativa falhada correspondente antes de tentar novamente.' : ' Confira as notificações do PS4 para mais detalhes.');
-      }
-      console.log(`${new Date().toISOString()} resposta do PS4 ${ps4Ip}: http=${response.status} status=${result.status ?? '-'} erro=${result.error_code ?? result.error ?? '-'}`);
-      if (!response.ok || result.status === 'fail') removeTransfer(transfer, 'PS4 respondeu falha');
-      return json(res, response.ok ? 200 : 502, { httpStatus: response.status, result, packageUrl, size: stat.size });
+      if (queue.active) throw new Error('Pause a fila antes de usar o envio manual.');
+      const result = await installFile(selectedFile, await readBody(req));
+      return json(res, result.httpStatus < 400 ? 200 : 502, result);
     } catch (e) {
       console.log(`${new Date().toISOString()} falha ao pedir instalação: ${e.message}`);
       return json(res, 502, { error: `Não foi possível obter resposta do PS4: ${e.message}` });
-    }
+    } finally { manualInstalling = false; }
   }
   res.writeHead(404); res.end('Not found');
 });
@@ -196,6 +284,7 @@ const files = http.createServer(async (req, res) => {
   if (requestedPath !== `/${path.basename(transfer.file)}`) { logDenied(peer, 'nome do arquivo não confere'); res.writeHead(404); return res.end('Package not found'); }
   let stat;
   try { stat = await fs.promises.stat(transfer.file); } catch { res.writeHead(404); return res.end('Package unavailable'); }
+  if (transfer.original && !['size', 'mtimeMs', 'ctimeMs'].every(k => stat[k] === transfer.original[k])) { res.writeHead(409); return res.end('Package changed after selection'); }
   logFileRequest(req, res, peer);
   const range = req.headers.range;
   const headers = { 'Accept-Ranges': 'bytes', 'Content-Type': 'application/octet-stream', 'Access-Control-Allow-Origin': '*' };
@@ -221,4 +310,4 @@ files.on('error', err => { console.error(`Não foi possível iniciar o servidor 
 ui.listen(UI_PORT, '127.0.0.1', () => console.log(`Interface: http://localhost:${UI_PORT}`));
 files.listen(FILE_PORT, '0.0.0.0', () => console.log(`Servidor de pacotes na porta ${FILE_PORT}; acesso limitado ao PS4 informado. IPs do Mac: ${localIPv4s().join(', ') || 'não detectado'}`));
 
-for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { conversion.cancel(); library.cancel(); Promise.allSettled([conversion.done, library.done]).finally(() => process.exit(0)); });
+for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { queue.shutdown(); queuedConversion.cancel(); conversion.cancel(); library.cancel(); Promise.allSettled([conversion.done, queuedConversion.done, library.done, queue.done]).finally(() => process.exit(0)); });

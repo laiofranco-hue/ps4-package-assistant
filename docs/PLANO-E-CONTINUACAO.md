@@ -1,6 +1,6 @@
 # Plano e passagem de trabalho
 
-Atualizado em 21/10/2026. Retomada autorizada: biblioteca funcional primeiro; acabamento visual depois.
+Atualizado em 21/10/2026. Etapas autorizadas: biblioteca funcional e, após aprovação do usuário, fila de conversão/envio com progresso e histórico. Acabamento visual depois.
 
 ## Estado entregue
 
@@ -61,11 +61,21 @@ O usuário confirmou a implementação da biblioteca funcional com visual simple
 
 Foram verificadas importação recursiva limitada às origens, persistência, preservação de metadados, origens sobrepostas, links simbólicos, arquivos ausentes/volumes desconectados, cancelamento, catálogo inválido e integração com as funções existentes. A interface foi exercitada com arquivos fictícios, sem conversão real ou envio ao PS4.
 
-Ficam pendentes: acabamento visual e biblioteca por capas, sincronização ao abrir, filas, perfis por jogo e integrações PS1/SNES. O catálogo de outras plataformas não significa suporte à execução ou conversão.
+Ficam pendentes: acabamento visual e biblioteca por capas, sincronização ao abrir, perfis por jogo e integrações PS1/SNES. O catálogo de outras plataformas não significa suporte à execução ou conversão.
 
 ## Próxima retomada
 
 1. Ler esta passagem, as instruções locais e a nota compartilhada do projeto.
 2. Conferir Git e mudanças de outros agentes; preservar o envio, conversão e Finder que já funcionam.
 3. Usar a biblioteca funcional com pastas escolhidas pelo usuário e observar eventuais ajustes. Não interpretar a aprovação dessa etapa como autorização para toda a lista.
-4. Confirmar a próxima etapa antes de avançar para filas ou novas plataformas; manter o acabamento visual para depois dos fluxos principais.
+4. A etapa de filas foi autorizada pelo usuário e entregue abaixo. Confirmar a próxima etapa antes de integrar novas plataformas; manter o acabamento visual para depois dos fluxos principais.
+
+## Fila entregue — 21/10/2026
+
+Autorização confirmada: “ok siga” após a proposta de fila de conversão/envio, progresso e histórico. Adicionados controles à interface existente, mantendo o visual simples. Cada tarefa captura arquivo e opções; execução sequencial, início explícito, pausa após tarefa atual, cancelamento de conversão e retirada de pendentes. Conversão usa registro por etapas; envio consulta bytes reais do Remote Package Installer. Histórico local permite selecionar resultados, repetir falhas e consultar a mesma tarefa do PS4.
+
+Falhas pausam a fila. Resposta perdida ou progresso indisponível exige conferência, sem reenvio automático. Reinício preserva pendentes e histórico, sinaliza tarefas interrompidas e recupera acesso ao arquivo exato de envios já solicitados. Tokens privados nunca são expostos pela API da fila. Catálogo, arquivos e resultados anteriores não são removidos. Conversão e envio continuam ações separadas. Completar os bytes confirma a transferência, não a abertura/compatibilidade do jogo.
+
+Validação: 22 testes automatizados de conversor, catálogo, transferência, fila e API; fixture de PS4 com respostas hexadecimais, persistência/reinício, proteção de token, detecção de arquivo alterado e recuperação sem novo pedido. Interface exercitada com arquivos fictícios em 1000 e 520 px, incluindo inclusão, duplicados, cancelamento, nova tentativa, histórico, persistência e foco durante consultas. Sem conversão de jogo real ou novo envio ao console nesta entrega.
+
+Próximo passo: usuário experimentar a fila no app com arquivos escolhidos e validar uma transferência no próprio PS4. PS1/SNES, perfis por jogo, sincronização ao abrir e acabamento visual continuam pendentes; não há autorização implícita para implementar todas as propostas.

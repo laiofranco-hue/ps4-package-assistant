@@ -87,3 +87,25 @@ Arquivos ausentes e HDs desconectados continuam no catálogo. Cópias idênticas
 O catálogo fica em `~/Library/Application Support/PS4 Package Assistant/library/library.json`, fora do iCloud Drive e do Git. Os caminhos e os arquivos dos jogos permanecem locais. Um catálogo inválido é preservado e sua edição fica bloqueada, sem impedir as funções existentes do app.
 
 Testes: `node --test test-library.cjs test-library-api.cjs test-conversion.cjs test-transfer.cjs`. Para testes isolados do servidor, `LIBRARY_DATA_DIR` define outra pasta de catálogo.
+
+## Fila de conversão e envio
+
+Prepare a ISO e suas opções e use **Adicionar conversão à fila**, ou selecione um PKG, confira os IPs e use **Adicionar envio à fila**. Repita para os próximos arquivos e clique em **Iniciar fila**. Há uma tarefa por vez e até 100 pendentes. A fila guarda o arquivo, título, emulador, resolução, capa e IPs de cada tarefa; mudar a seleção depois não altera tarefas já adicionadas. Originais e resultados anteriores são preservados.
+
+**Pausar após a tarefa atual** segura as próximas. Você pode retirar uma tarefa pendente ou cancelar a conversão atual. **Parar acompanhamento** de um envio não cancela o download no console; o pacote continua servido enquanto o app estiver aberto. O controle anterior **Interromper upload** interrompe a leitura dos pacotes no Mac, sem excluir tarefas/jogos no PS4.
+
+Conversões mostram o registro real do conversor, sem percentual estimado. Envios consultam os bytes de `get_task_progress` do [Remote Package Installer](https://github.com/flatz/ps4_remote_pkg_installer). Pedido aceito não significa transferência concluída: o app exige total positivo, todos os bytes recebidos e erro zero. A instalação e a abertura do jogo devem ser conferidas no console.
+
+Em falhas, a fila pausa. Se a resposta da instalação se perder, a situação fica **Conferir no PS4**, sem reenvio automático. Com o número da tarefa disponível, **Consultar progresso** acompanha a mesma tarefa. **Criar nova tentativa** preserva o registro anterior; um envio incerto exige conferir Downloads e confirmar antes de repetir, pois pode duplicá-lo.
+
+Após reabrir o app, tarefas pendentes aguardam **Iniciar fila**; conversões interrompidas não reiniciam automaticamente e envios precisam ser conferidos. O acesso de um download já solicitado é recuperado apenas para o arquivo original inalterado, com o mesmo token e restrição ao IP do PS4. Isso não inicia um novo pedido de instalação. Alterações no arquivo bloqueiam execução/leitura. O Mac precisa permanecer acordado e o instalador deve estar em primeiro plano para responder às consultas.
+
+Conversão e envio continuam separados: no histórico, **Usar PKG no envio** seleciona um resultado para adicioná-lo à fila de envios. Nenhum resultado convertido é enviado automaticamente. O histórico e os tokens ficam somente em `~/Library/Application Support/PS4 Package Assistant/queue/queue.json`, com acesso local restrito, fora do Git e do iCloud. Histórico ilegível é preservado em modo de leitura. Não há integração PS1/SNES nesta etapa.
+
+Verificação completa, com console/conversor de teste e sem jogos reais:
+
+```sh
+node --test --test-concurrency=1 test-queue.cjs test-queue-api.cjs test-library.cjs test-library-api.cjs test-conversion.cjs test-transfer.cjs
+```
+
+Os testes de API usam a porta local 12800 e são executados em sequência. `QUEUE_DATA_DIR` isola fila/histórico em testes, assim como `LIBRARY_DATA_DIR` isola o catálogo.

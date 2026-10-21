@@ -32,13 +32,23 @@ details{margin-top:20px}summary{cursor:pointer;color:var(--accent);font-weight:6
 <label>Capa do jogo (opcional)</label><div class="cover-choice"><img id="cover-preview" alt="Prévia da miniatura do jogo no PS4" width="96" height="96" hidden><div><button class="secondary" id="choose-cover">Escolher capa</button> <button class="secondary" id="clear-cover" hidden>Remover capa</button><p id="cover-name" class="hint">Usar a capa padrão do pacote.</p></div></div><p class="hint">Escolha PNG ou JPG. A imagem será ajustada para 512 × 512 sem deformar; bordas pretas completam o quadrado quando necessário.</p>
 <div class="row"><div><label for="emulator">Emulador</label><select id="emulator"><option>Jak v2</option><option>Rogue v1</option></select></div>
 <div><label for="resolution">Resolução</label><select id="resolution"><option value="2x2">2× — padrão</option><option value="1x1">1× — nativa</option></select></div></div>
-<div class="actions"><button id="convert" disabled>Converter em PKG</button> <button id="cancel-conversion" class="secondary" hidden>Cancelar conversão</button></div>
+<div class="actions"><button id="convert" disabled>Converter em PKG</button><button id="queue-convert" class="secondary">Adicionar conversão à fila</button> <button id="cancel-conversion" class="secondary" hidden>Cancelar conversão</button></div>
 <p class="hint">Na primeira conversão, o app baixa o conversor e os arquivos do emulador. Mantenha o Mac conectado à internet.</p>
 <p id="conversion-state" role="status" aria-live="polite" class="hint">Selecione uma ISO para começar.</p>
 <details id="conversion-details" hidden><summary>Registro da conversão</summary><pre id="conversion-log"></pre></details>
 </details></div></div></section>
 <section class="card"><div class="step"><span class="num">2</span><div style="flex:1"><h2>Confira a conexão</h2><div class="row"><div><label for="ps4">IP do PS4</label><input id="ps4" value="192.168.18.45" inputmode="decimal"></div><div><label for="mac">IP do Mac na mesma rede</label><input id="mac" value="192.168.18.106" inputmode="decimal"></div></div><div class="pill" id="ipnote">Detectando interfaces de rede…</div><p class="hint">O app Remote Package Installer precisa estar aberto no PS4. Mantenha esta ferramenta e o Mac ativos durante o envio.</p></div></div></section>
-<section class="card"><div class="step"><span class="num">3</span><div style="flex:1"><h2>Enviar</h2><p class="hint">A ferramenta cria um servidor local que permite ao PS4 ler partes do pacote corretamente.</p><div class="actions"><button id="send">Enviar ao PS4</button> <button class="secondary" id="cancel" style="margin-top:0;margin-left:10px">Interromper upload</button></div><div class="status" id="status" role="status" aria-live="polite"></div></div></div></section>
+<section class="card"><div class="step"><span class="num">3</span><div style="flex:1"><h2>Enviar</h2><p class="hint">A ferramenta cria um servidor local que permite ao PS4 ler partes do pacote corretamente.</p><div class="actions"><button id="send">Enviar ao PS4</button> <button id="queue-send" class="secondary">Adicionar envio à fila</button> <button class="secondary" id="cancel" style="margin-top:0;margin-left:10px">Interromper upload</button></div><div class="status" id="status" role="status" aria-live="polite"></div></div></div></section>
+<section class="card" aria-labelledby="queue-heading">
+<h2 id="queue-heading">Fila e histórico</h2>
+<p class="hint">Prepare cada ISO ou PKG acima e adicione à fila. As opções e os IPs ficam guardados por tarefa. Conversões e envios são separados: um PKG convertido só é enviado quando você o adiciona à fila de envios.</p>
+<div class="library-toolbar"><button id="queue-start" disabled>Iniciar fila</button><button id="queue-pause" class="secondary" disabled>Pausar após a tarefa atual</button></div>
+<p id="queue-message" class="hint" role="status" aria-live="polite">Carregando fila…</p>
+<p class="hint">Mantenha o app e o Mac ativos. Pausar não interrompe a tarefa atual. Após fechar o app, a fila aguarda sua ação para continuar.</p>
+<p id="queue-error" class="hint library-error" role="alert" hidden></p>
+<ul id="queue-pending" class="library-items"></ul>
+<details><summary id="queue-history-count">Histórico</summary><ul id="queue-history" class="library-items"></ul><button id="queue-more" class="secondary" hidden>Mostrar mais tarefas</button></details>
+</section>
 <p class="hint">Esta página é servida apenas no próprio Mac. O PS4 acessa o arquivo pela rede local.</p>
 </main><script>
 const fileBox=document.querySelector('#file'),statusBox=document.querySelector('#status'),choose=document.querySelector('#choose'),send=document.querySelector('#send');
@@ -64,4 +74,4 @@ for(const [id,route] of [['reveal-pkg','/reveal'],['open-converted','/folder']])
 document.querySelector('#choose-cover').onclick=async()=>{document.querySelector('#choose-cover').disabled=true;try{const d=await conversionRequest('/cover/select');if(!d.cancelled){coverKey='';renderConversion(d)}else await conversionStateRefresh()}catch(e){conversionState.textContent=e.message}finally{document.querySelector('#choose-cover').disabled=false}};
 document.querySelector('#clear-cover').onclick=async()=>{try{renderConversion(await conversionRequest('/cover/clear'))}catch(e){conversionState.textContent=e.message}};
 conversionStateRefresh();
-</script><script src="/library-ui.js"></script></body></html>
+</script><script src="/library-ui.js"></script><script src="/queue-ui.js"></script></body></html>
