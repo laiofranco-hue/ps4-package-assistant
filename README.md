@@ -117,3 +117,7 @@ Se o conversor informar que não encontrou o serial de inicialização (por exem
 ## Prova de SNES em preparação
 
 O [teste de pSNES no PS4](docs/TESTE-SNES-PS4.md) prepara a próxima integração com biblioteca de vários jogos. O pacote do emulador foi conferido localmente; execução, controles e salvamento no console ainda estão pendentes. `scripts/prepare-snes-test.py` copia até três ROMs explicitamente escolhidas para uma pasta local nova e registra hashes, sem instalar ou enviar nada. Essa ferramenta não acrescenta suporte SNES ao conversor PS2 nem ao app instalado.
+
+## Coleção SNES e capas
+
+O [procedimento de biblioteca SNES com capas](docs/BIBLIOTECA-SNES-CAPAS.md) descreve importação da ISO fornecida, identificação por conteúdo, capas do Libretro e cópia FTP que preserva arquivos existentes e saves. Versões não identificadas usam arte do jogo-base explicitamente sinalizada ou cartões neutros. Os componentes são ferramentas locais; ainda não há novo painel SNES no app. Conteúdo dos jogos e imagens permanecem fora do Git e do DMG.

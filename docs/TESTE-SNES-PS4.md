@@ -51,8 +51,9 @@ A ferramenta não verifica compatibilidade da ROM, não abre FTP, não instala n
 | Transferência e instalação do pSNES | Confirmadas: bytes completos, erro zero e aplicativo presente |
 | Abertura do pSNES e biblioteca | Confirmadas pelo usuário; foto mostra três jogos |
 | Início de um jogo | Confirmado pelo usuário; não estender aos três jogos |
-| Controles, áudio/vídeo durante o jogo | Pendente |
-| Estado salvo e recarregado após reabrir | Pendente |
+| Controles e som de um jogo de Mario | Confirmados pelo usuário |
+| Demais jogos da coleção | Não validados individualmente |
+| Estado salvo e recarregado após reabrir | Confirmado pelo usuário no teste de Mario |
 | Salvamento interno do jogo após reabrir | Pendente |
 
 Em falhas: registrar versão, jogo, etapa e mensagem/código. Não marcar suporte geral a SNES a partir de uma instalação bem-sucedida. A integração no app só deve começar após a prova real e terá como proposta selecionar pasta, preparar/enviar cópias e atualizar a biblioteca sem apagar saves ou arquivos desconhecidos. O desenho definitivo desse fluxo ainda depende do resultado do teste.
@@ -86,3 +87,8 @@ Após trocar nomes ou lista, fechar completamente e reabrir o pSNES para reconst
 ### Resultado após normalização das extensões
 
 Em 21/10/2026, o usuário confirmou que os jogos aparecem e um jogo inicia. Foto fornecida confirma três entradas na lista. O ajuste de extensões fica validado para essa biblioteca de teste. A foto permanece somente na área privada; não foi incluída no repositório. Ainda pendentes: identificação de qual jogo foi iniciado, testes dos demais jogos, controles, áudio/vídeo e salvamento após reabrir o emulador. Não afirmar compatibilidade geral de SNES a partir desse resultado.
+
+
+### Confirmação do teste de Mario
+
+O usuário confirmou controles, som e estado salvo após reabrir, e relatou que jogou Mario com o resultado esperado. Salvamento interno do próprio jogo não foi confirmado separadamente. A expansão da coleção com capas está documentada em [Biblioteca SNES com capas](BIBLIOTECA-SNES-CAPAS.md); não é evidência de teste individual de toda a coleção.
