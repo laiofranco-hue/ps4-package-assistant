@@ -75,6 +75,13 @@ const ui = http.createServer(async (req, res) => {
   if (url.pathname.startsWith('/api/conversion')) {
     if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
     try {
+      if (req.method === 'GET' && url.pathname === '/api/conversion/cover') {
+        if (!conversion.cover) { res.writeHead(404); return res.end(); }
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
+        const stream = fs.createReadStream(conversion.cover); stream.on('error', () => res.destroy()); return stream.pipe(res);
+      }
+      if (req.method === 'POST' && url.pathname === '/api/conversion/cover/select') return json(res, 200, await conversion.selectCover());
+      if (req.method === 'POST' && url.pathname === '/api/conversion/cover/clear') return json(res, 200, conversion.clearCover());
       if (req.method === 'GET' && url.pathname === '/api/conversion') return json(res, 200, conversion.state());
       if (req.method === 'POST' && url.pathname === '/api/conversion/select') return json(res, 200, await conversion.select());
       if (req.method === 'POST' && url.pathname === '/api/conversion/start') {

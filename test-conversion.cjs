@@ -52,3 +52,28 @@ test('failure and cancellation never select incomplete output or delete the ISO'
   assert.equal(c.state().status,'cancelled');assert.equal(selected,false);assert.equal(fs.readFileSync(iso,'utf8'),'source');
   assert.deepEqual(fs.readdirSync(path.join(root,'out')),[]);
 });
+
+test('cover is resized to square PNG, passed to the converter and removable', {skip:process.platform!=='darwin'}, async t => {
+  const {promisify}=require('node:util');
+  const run=promisify(require('node:child_process').execFile);
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cover-test-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const image=path.join(root,'portrait.png');
+  await run('/usr/bin/sips',['-s','format','png','-z','24','12',path.join(__dirname,'packaging/app/AppIcon.icns'),'--out',image]);
+  const original=fs.readFileSync(image);
+  const iso=path.join(root,'game.iso');fs.writeFileSync(iso,'iso');
+  const tool=path.join(root,'converter');
+  fs.writeFileSync(tool,`#!${process.execPath}\nconst fs=require('fs'),path=require('path');const a=process.argv.slice(2),o=a[a.indexOf('--out')+1];fs.copyFileSync(a[a.indexOf('--icon')+1],path.join(o,'cover.png'));fs.writeFileSync(path.join(o,'game.pkg'),Buffer.from('7f434e54','hex'));`,{mode:0o700});
+  let chosen=image;
+  const c=new Conversion({executable:tool,outputRoot:path.join(root,'out'),pickFile:async()=>iso,pickCoverFile:async()=>chosen});
+  await c.selectCover();
+  assert.equal(c.state().coverSelected,true);
+  const info=(await run('/usr/bin/sips',['-g','pixelWidth','-g','pixelHeight','-g','format',c.cover])).stdout;
+  assert.match(info,/pixelWidth: 512/);assert.match(info,/pixelHeight: 512/);assert.match(info,/format: png/);
+  assert.deepEqual(fs.readFileSync(image),original);
+  const prior=c.cover;chosen=iso;await assert.rejects(c.selectCover(),/PNG ou JPG/);assert.equal(c.cover,prior);
+  await c.select();await c.start();await c.done;
+  assert.equal(c.state().status,'success');
+  assert.ok(fs.existsSync(path.join(path.dirname(c.state().output),'cover.png')));
+  c.clearCover();assert.equal(c.state().coverSelected,false);
+});

@@ -65,3 +65,7 @@ Os resultados vão para `~/.codex/.chatgpt-projects/ps4-package-assistant-local/
 Validação: `node --test test-conversion.cjs test-transfer.cjs`. `ISO_FILE` permite selecionar a ISO ao iniciar pelo Terminal, sem mudar o seletor do app.
 
 Depois de converter, use **Mostrar PKG no Finder** para revelar o arquivo ou **Abrir pasta de convertidos** para localizar resultados anteriores. O último resultado é lembrado localmente mesmo depois de reabrir o app; nenhum caminho pessoal é publicado no repositório.
+
+### Capa personalizada
+
+Na conversão, use **Escolher capa** para selecionar PNG ou JPG. O app mostra uma prévia e gera uma cópia PNG de 512 × 512 pixels, mantendo a proporção e completando com bordas pretas. A imagem original permanece intacta. **Remover capa** volta à capa padrão. A escolha vale para as conversões da sessão e não altera pacotes já instalados; para atualizar o ícone no PS4 é necessário gerar e instalar o novo PKG.

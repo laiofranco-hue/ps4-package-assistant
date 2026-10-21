@@ -9,11 +9,14 @@ const VERSION = 'v1.2.0';
 const DIGEST = '2c82143df56710ef8c09d046e3965a2d52f8bb2a83cb2e4729e5b962d7e2847f';
 
 class Conversion {
-  constructor({ onComplete = () => {}, executable, outputRoot, pickFile, open = run } = {}) {
+  constructor({ onComplete = () => {}, executable, outputRoot, pickFile, pickCoverFile, open = run } = {}) {
     this.onComplete = onComplete;
     this.executable = executable;
     this.outputRoot = outputRoot || path.join(os.homedir(), '.codex', '.chatgpt-projects', 'ps4-package-assistant-local', 'outputs', 'PS2-PKG');
     this.pickFile = pickFile || (async () => (await run('/usr/bin/osascript', ['-e', 'POSIX path of (choose file with prompt "Selecione a ISO de PS2")'])).stdout.trim());
+    this.pickCoverFile = pickCoverFile || (async () => (await run('/usr/bin/osascript', ['-e', 'POSIX path of (choose file with prompt "Escolha a capa do jogo (PNG ou JPG)" of type {"public.png", "public.jpeg"})'])).stdout.trim());
+    this.cover = '';
+    this.coverName = '';
     this.open = open;
     this.lastOutput = '';
     try {
@@ -25,12 +28,44 @@ class Conversion {
     this.job = { status: 'idle', log: [], error: '', output: '' };
     this.running = false;
   }
-  state() { return { ...this.job, iso: this.iso, log: [...this.job.log], outputRoot: this.outputRoot, lastOutput: fs.existsSync(this.lastOutput) ? this.lastOutput : '' }; }
+  state() { return { ...this.job, iso: this.iso, log: [...this.job.log], coverSelected: Boolean(this.cover), coverName: this.coverName, preparingCover: Boolean(this.preparingCover), outputRoot: this.outputRoot, lastOutput: fs.existsSync(this.lastOutput) ? this.lastOutput : '' }; }
   async reveal(folder = false) {
     const output = this.state().lastOutput;
     if (!folder && output) await this.open('/usr/bin/open', ['-R', output]);
     else { await fs.promises.mkdir(this.outputRoot, { recursive: true }); await this.open('/usr/bin/open', [this.outputRoot]); }
     return { revealed: true };
+  }
+  async selectCover() {
+    if (this.running || this.preparingCover) throw new Error('Aguarde ou cancele a conversão atual.');
+    this.preparingCover = true;
+    let temp;
+    try {
+      let file;
+      try { file = await this.pickCoverFile(); } catch (e) {
+        if (String(e.stderr || '').includes('(-128)')) return { cancelled: true };
+        throw e;
+      }
+      if (!['.png', '.jpg', '.jpeg'].includes(path.extname(file).toLowerCase()) || !(await fs.promises.stat(file)).isFile()) throw new Error('Escolha uma imagem PNG ou JPG.');
+      const cache = path.join(path.dirname(this.outputRoot), 'cover-cache');
+      await fs.promises.mkdir(cache, { recursive: true });
+      temp = await fs.promises.mkdtemp(path.join(cache, 'capa-'));
+      const icon = path.join(temp, 'icon0.png');
+      // Keep the aspect ratio; pad the square icon rather than stretching a portrait cover.
+      await run('/usr/bin/sips', ['-s', 'format', 'png', '-Z', '512', file, '--out', icon]);
+      await run('/usr/bin/sips', ['--padToHeightWidth', '512', '512', '--padColor', '000000', icon]);
+      this.cover = icon;
+      this.coverName = path.basename(file);
+      this.preparingCover = false;
+      return this.state();
+    } catch (e) {
+      if (temp) await fs.promises.rm(temp, { recursive: true, force: true }).catch(() => {});
+      throw new Error('Não foi possível preparar a capa: ' + e.message);
+    } finally { this.preparingCover = false; }
+  }
+  clearCover() {
+    if (this.running || this.preparingCover) throw new Error('Aguarde ou cancele a conversão atual.');
+    this.cover = ''; this.coverName = '';
+    return this.state();
   }
   async select() {
     if (this.running) throw new Error('Aguarde ou cancele a conversão atual.');
@@ -75,10 +110,12 @@ class Conversion {
     return binary;
   }
   async start(options = {}) {
+    if (this.preparingCover) throw new Error('Aguarde o preparo da capa.');
     if (this.running) throw new Error('Já existe uma conversão em andamento.');
     if (!this.iso || path.extname(this.iso).toLowerCase() !== '.iso') throw new Error('Selecione a ISO de PS2 primeiro.');
     if (!(await fs.promises.stat(this.iso)).isFile()) throw new Error('A ISO selecionada não está disponível.');
     // Recheck after stat: two requests may have been waiting on the same I/O.
+    if (this.preparingCover) throw new Error('Aguarde o preparo da capa.');
     if (this.running) throw new Error('Já existe uma conversão em andamento.');
     const emulator = options.emulator || 'Jak v2';
     const resolution = options.resolution || '2x2';
@@ -87,7 +124,7 @@ class Conversion {
     this.running = true;
     this.controller = new AbortController();
     this.job = { status: 'running', log: [], error: '', output: '', emulator, resolution };
-    this.done = this.execute({ emulator, resolution, title: options.title || '' });
+    this.done = this.execute({ emulator, resolution, title: options.title || '', icon: this.cover });
     return this.state();
   }
   async execute(options) {
@@ -98,6 +135,7 @@ class Conversion {
       await fs.promises.mkdir(this.outputRoot, { recursive: true });
       output = await fs.promises.mkdtemp(path.join(this.outputRoot, 'conversao-'));
       const args = [this.iso, '--out', output, '--emu', options.emulator, '--uprender', options.resolution];
+      if (options.icon) args.push('--icon', options.icon);
       if (options.title.trim()) args.push('--title', options.title.trim());
       this.append('Convertendo a ISO. Mantenha o app aberto até concluir.');
       await new Promise((resolve, reject) => {
