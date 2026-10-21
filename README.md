@@ -109,3 +109,7 @@ node --test --test-concurrency=1 test-queue.cjs test-queue-api.cjs test-library.
 ```
 
 Os testes de API usam a porta local 12800 e são executados em sequência. `QUEUE_DATA_DIR` isola fila/histórico em testes, assim como `LIBRARY_DATA_DIR` isola o catálogo.
+
+### ISO sem identificador de inicialização de PS2
+
+Se o conversor informar que não encontrou o serial de inicialização (por exemplo, `SLUS_209.32`), o app mostra essa causa e preserva o registro original. Algumas imagens caseiras iniciam um ELF de emulador sem esse identificador; não são aceitas pelo conversor atual. Isso não comprova corrupção da ISO. Trocar título, capa ou resolução não fornece o identificador ausente. A biblioteca de SNES/retrôs depende de uma integração própria, ainda pendente, e não é implementada pela conversão PS2 existente.

@@ -77,3 +77,28 @@ test('cover is resized to square PNG, passed to the converter and removable', {s
   assert.ok(fs.existsSync(path.join(path.dirname(c.state().output),'cover.png')));
   c.clearCover();assert.equal(c.state().coverSelected,false);
 });
+
+
+test('missing PS2 boot serial explains unsupported images and preserves the source and previous result', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'conversion-serial-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const iso = path.join(root, 'homebrew.iso'); fs.writeFileSync(iso, 'BOOT2 = cdrom0:\\SNES_EMU.ELF;1');
+  const original = fs.readFileSync(iso);
+  const out = path.join(root, 'out'); fs.mkdirSync(out);
+  const previous = path.join(out, 'previous.pkg'); fs.writeFileSync(previous, Buffer.from('7f434e54', 'hex'));
+  fs.writeFileSync(path.join(out, 'last-result.json'), JSON.stringify({ output: previous }));
+  const fake = path.join(root, 'converter');
+  fs.writeFileSync(fake, `#!${process.execPath}\nconsole.error('ERROR: could not detect a PS2 boot serial (e.g. SLUS_209.32) in the ISO');process.exit(1);`, { mode: 0o700 });
+  let selected = false;
+  const c = new Conversion({ executable: fake, outputRoot: out, onComplete: () => { selected = true; } });
+  await c.useIso(iso); await c.start(); await c.done;
+  assert.equal(c.state().status, 'error');
+  assert.match(c.state().error, /identificador de inicialização/);
+  assert.match(c.state().error, /SNES\/retrôs ainda não está integrado/);
+  assert.match(c.state().error, /não indica uma ISO corrompida/);
+  assert.ok(c.state().log.some(line => line.includes('could not detect a PS2 boot serial')));
+  assert.equal(selected, false); assert.equal(c.state().output, '');
+  assert.equal(c.state().lastOutput, previous); assert.ok(fs.existsSync(previous));
+  assert.deepEqual(fs.readFileSync(iso), original);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['last-result.json', 'previous.pkg']);
+});

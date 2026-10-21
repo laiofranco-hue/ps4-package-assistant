@@ -151,7 +151,14 @@ class Conversion {
         this.child.stdout.on('data', c => this.append(c));
         this.child.stderr.on('data', c => this.append(c));
         this.child.once('error', reject);
-        this.child.once('close', code => code === 0 ? resolve() : reject(new Error(`Conversor terminou com código ${code}. Consulte o registro abaixo.`)));
+        this.child.once('close', code => {
+          if (code === 0) return resolve();
+          const missingSerial = /could\s+not\s+detect\s+a\s+PS2\s+boot\s+serial/i.test(this.job.log.join('\n'));
+          const message = missingSerial
+            ? 'O conversor não encontrou o identificador de inicialização de um jogo de PS2 (ex.: SLUS_209.32). Imagens caseiras, como emuladores com ROMs, podem não ter esse identificador e não são aceitas neste fluxo. O suporte a SNES/retrôs ainda não está integrado. Isso, por si só, não indica uma ISO corrompida.'
+            : `Conversor terminou com código ${code}. Consulte o registro abaixo.`;
+          reject(new Error(message));
+        });
       });
       this.child = null;
       this.controller.signal.throwIfAborted();
