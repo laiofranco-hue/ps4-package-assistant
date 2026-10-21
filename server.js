@@ -115,7 +115,11 @@ const ui = http.createServer(async (req, res) => {
         body: JSON.stringify({ type: 'direct', packages: [packageUrl] }), signal: AbortSignal.timeout(30000)
       });
       const text = await response.text();
-      let result; try { result = JSON.parse(text); } catch { result = { raw: text }; }
+      let result; try { result = JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token))); } catch { result = { raw: text }; }
+      if (result.status === 'fail' && result.error_code != null) {
+        const code = typeof result.error_code === 'number' ? '0x' + result.error_code.toString(16).toUpperCase() : result.error_code;
+        result.error = `O PS4 recusou a instalação (${code}).` + (String(code).toLowerCase() === '0x80990015' ? ' Pode existir uma instalação ou download anterior deste pacote. Confira as notificações de Downloads no PS4 e remova apenas a tentativa falhada correspondente antes de tentar novamente.' : ' Confira as notificações do PS4 para mais detalhes.');
+      }
       console.log(`${new Date().toISOString()} resposta do PS4 ${ps4Ip}: http=${response.status} status=${result.status ?? '-'} erro=${result.error_code ?? result.error ?? '-'}`);
       if (!response.ok || result.status === 'fail') removeTransfer(transfer, 'PS4 respondeu falha');
       return json(res, response.ok ? 200 : 502, { httpStatus: response.status, result, packageUrl, size: stat.size });

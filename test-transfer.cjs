@@ -11,6 +11,7 @@ test('PS4 background download survives query stripping and supports concurrent r
   const file = path.join(tmp, 'fixture.pkg');
   const bytes = Buffer.from('PKG regression fixture 0123456789');
   fs.writeFileSync(file, bytes);
+  let fail = false;
   const fakePS4 = http.createServer(async (req, res) => {
     let body = ''; for await (const c of req) body += c;
     const original = new URL(JSON.parse(body).packages[0]);
@@ -30,7 +31,7 @@ test('PS4 background download survives query stripping and supports concurrent r
       const invalid = new URL(background); invalid.pathname = invalid.pathname.replace(/\/[a-f0-9]{64}\//, '/bad/');
       assert.equal((await fetch(invalid)).status, 403);
       assert.equal((await fetch(background, {headers:{Range:'bytes=999-'}})).status, 416);
-      res.end(JSON.stringify({status:'success', task_id:1}));
+      res.end(fail ? '{ \"status\": \"fail\", \"error_code\": 0x80990015 }' : JSON.stringify({status:'success', task_id:1, title:'Literal 0x80990015'}));
     } catch (e) { res.statusCode = 500; res.end(JSON.stringify({error:e.message})); }
   });
   await new Promise(r => fakePS4.listen(12800, '127.0.0.1', r));
@@ -41,4 +42,13 @@ test('PS4 background download survives query stripping and supports concurrent r
   const result = await r.json();
   assert.equal(result.httpStatus, 200, JSON.stringify(result));
   assert.equal(result.result.status, 'success');
+  assert.equal(result.result.title, 'Literal 0x80990015');
+  fail = true;
+  const rejected = await fetch('http://127.0.0.1:14173/api/install', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ps4Ip:'127.0.0.1',macIp:'127.0.0.1'})});
+  const failure = await rejected.json();
+  assert.equal(failure.result.status, 'fail');
+  assert.equal(failure.result.error_code, '0x80990015');
+  assert.match(failure.result.error, /notificações/);
+  assert.equal((await fetch(failure.packageUrl)).status, 403);
+  assert.equal((await fetch(result.packageUrl)).status, 200);
 });
