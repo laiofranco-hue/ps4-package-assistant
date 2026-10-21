@@ -52,6 +52,26 @@ class LibraryTests(unittest.TestCase):
             self.assertEqual((result/'roms/ONE.sfc').read_bytes(), data)
             self.assertEqual(ET.parse(result/'roms/gamelist.xml').findtext('.//name'), 'Fixture & Test (USA)')
 
+    def test_7z_members_are_explicitly_copied_and_unrelated_files_are_ignored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); iso = root/'source.iso'; iso.write_bytes(b'iso')
+            rom = b'a'*32768; sha = hashlib.sha1(rom).hexdigest()
+            dat = root/'db.dat'; dat.write_text(f'game (\n name "Fixture"\n rom ( sha1 {sha} )\n)')
+            def run(args, **kwargs):
+                if '-tf' in args:
+                    return 'ROMS/TRANSL.7Z' if iso.resolve() == Path(args[-1]).resolve() else 'One [English].sfc\nTwo.smc\nreadme.txt'
+                if args[-1] == 'ROMS/TRANSL.7Z':
+                    return b'archive fixture'
+                self.assertIn(args[-1], ['One [[]English].sfc', 'Two.smc'])
+                return rom
+            with patch('snes_library.subprocess.check_output', side_effect=run):
+                result = build(iso, dat, root/'out', progress=lambda _:None)
+            manifest = json.loads((result/'manifest.json').read_text())
+            self.assertEqual(len(manifest['items']),2)
+            self.assertFalse((result/'roms/TRANSL.7z').exists())
+            self.assertTrue((result/'source-archives/TRANSL.7z').exists())
+            self.assertFalse((result/'roms/readme.txt').exists())
+
     def test_artwork_selection_does_not_fuzzily_assign_a_different_game(self):
         files = ['Named_Boxarts/Game (USA).png', 'Named_Boxarts/Game II (USA).png']
         self.assertEqual(choose_art('Game (Europe)', files)[0], files[0])

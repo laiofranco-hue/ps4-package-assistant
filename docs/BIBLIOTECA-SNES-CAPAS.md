@@ -4,9 +4,9 @@ Escopo autorizado em 21/10/2026: importar os jogos já fornecidos pelo usuário 
 
 ## Preparação da coleção
 
-A ISO indicada contém 1.039 arquivos: 892 ROMs soltas e 147 ZIPs. Um ZIP contém quatro partes de um jogo e foi aberto em cópias independentes, resultando em **1.042 entradas**. A ISO original é somente lida. Arquivos antigos do pSNES mantêm o nome-base, para preservar associação com estados e SRAM. Nenhum save é convertido ou apagado. Como o pSNES usa o nome sem extensão para estados e configurações, novos arquivos de 25 grupos com nomes-base repetidos são diferenciados (26 renomeações), mantendo os três nomes já utilizados. A preparação aceita uma lista de nomes existentes a preservar.
+A ISO indicada contém 1.041 arquivos de jogos/coleções: 892 ROMs soltas, 147 ZIPs e dois 7z. Um ZIP contém quatro partes de um jogo e foi aberto em cópias independentes, e os dois 7z contêm quatro versões adicionais, resultando em **1.046 entradas**. A ISO original é somente lida. Arquivos antigos do pSNES mantêm o nome-base, para preservar associação com estados e SRAM. Nenhum save é convertido ou apagado. Como o pSNES usa o nome sem extensão para estados e configurações, novos arquivos de 25 grupos com nomes-base repetidos são diferenciados (26 renomeações), mantendo os três nomes já utilizados. A preparação aceita uma lista de nomes existentes a preservar.
 
-As extensões das cópias são normalizadas para minúsculas, conforme o filtro do pSNES. Cada arquivo recebe SHA-256 e a biblioteca gera `gamelist.xml`. Jogos em ZIP com uma ROM permanecem compactados; ZIPs com múltiplas ROMs viram entradas separadas, sem executar ou extrair caminhos arbitrários do arquivo.
+As extensões das cópias são normalizadas para minúsculas, conforme o filtro do pSNES. Cada arquivo recebe SHA-256 e a biblioteca gera `gamelist.xml`. Jogos em ZIP com uma ROM permanecem compactados; ZIPs com múltiplas ROMs e pacotes 7z viram entradas separadas. Apenas membros de ROM são lidos; atalhos e textos dos pacotes são ignorados. Nomes com colchetes são tratados literalmente ao chamar o leitor de arquivos. Nenhum conteúdo é executado durante a preparação.
 
 ## Capas e identificação
 
@@ -19,9 +19,9 @@ Na coleção preparada:
 | Categoria | Entradas |
 |---|---:|
 | Capas de títulos identificados pelo hash da ROM | 773 |
-| Arte do jogo-base de versão modificada/não identificada | 68 |
+| Arte do jogo-base de versão modificada/não identificada | 72 |
 | Cartões neutros, rotulados como capa original não identificada | 201 |
-| Total | 1.042 |
+| Total | 1.046 |
 
 Uma edição diferente do mesmo título pode fornecer a arte quando não existe imagem da edição exata. Versões associadas por cabeçalho recebem marcação de jogo-base no nome e no manifesto; isso não comprova a identidade exata da ROM. Famílias ambíguas não são associadas por aproximação. Ausência de correspondência ou falha no download gera um cartão neutro com o nome; não se usa a capa de outro jogo para esconder a falta de identificação.
 
@@ -52,4 +52,8 @@ Os testes usam arquivos fictícios e FTP simulado. ISO, ROMs, imagens, recibos, 
 
 ## Estado de entrega
 
-Biblioteca e imagens preparadas localmente. A cópia para o PS4 e a atualização final da lista ainda estão em andamento; confirmar o recibo final e o teste visual antes de registrar conclusão.
+Cópia concluída no PS4 em 21/10/2026: **1.046 entradas e 1.015 imagens distintas**, todas com releitura SHA-256 correspondente. As 26 renomeações planejadas foram aplicadas somente às novas entradas em conflito; nomes dos três jogos anteriores preservados. A lista final foi relida e conferida no destino, com IDs distintos e referências para imagens existentes.
+
+Antes de publicar os metadados, três arquivos de saves/configuração foram copiados para backup local. Os arquivos de save permaneceram byte a byte iguais após a atualização. A lista anterior e a configuração original também ficaram em backups remotos. A única preferência alterada foi exibir os títulos do XML em vez dos nomes curtos dos arquivos. Não houve mudança nas configurações de emulação.
+
+O usuário foi solicitado a reabrir pSNES, conferir a lista, a capa de Mario e seu estado salvo. Essa verificação visual da coleção expandida permanece pendente. O teste anterior de Mario, controles, som e estado salvo continua confirmado pelo usuário; não se declara teste individual de todas as entradas.

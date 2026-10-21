@@ -92,3 +92,12 @@ Pendências reais: console não respondeu nos serviços conhecidos durante a ins
 ### Prova real em andamento — 21/10/2026
 
 Com acesso disponibilizado pelo usuário, pSNES foi instalado no PS4: transferência completa, erro zero e presença do título confirmadas. Três ROMs da ISO indicada foram preparadas em cópias, enviadas para a pasta do emulador e verificadas por SHA-256 remoto, sem sobrescrever arquivos. Os impedimentos anteriores de acesso/caminho foram resolvidos. Aguardam-se testes pelo usuário de abertura, biblioteca, imagem, som, controles e salvamento. Não confundir instalação/cópia confirmadas com suporte SNES integrado ao app ou jogabilidade validada.
+
+
+## Coleção SNES com capas entregue ao console — 21/10/2026
+
+O usuário confirmou Mario, controles, som e estado salvo após reabrir e autorizou importar sua coleção SNES com capas. A coleção completa fornecida contém 1.041 arquivos de ROMs/arquivos compactados; ZIP e 7z com várias versões resultaram em 1.046 entradas. Cópia FTP concluída e conferida por SHA-256, incluindo 1.015 imagens únicas. Metadados finais publicados, arquivos existentes preservados e saves/configuração em backup. Nomes-base de novas entradas foram diferenciados para evitar conflitos de saves, mantendo os três nomes já usados.
+
+Há 773 artes de títulos identificados, 72 artes de jogo-base sinalizadas e 201 capas neutras para casos sem correspondência segura. [Detalhes e limites](BIBLIOTECA-SNES-CAPAS.md). Nove testes Python passaram. O usuário foi solicitado a conferir a coleção e as capas na TV e recarregar seu estado de Mario. Isso ainda não comprova compatibilidade de todas as ROMs.
+
+O app de Mac e o DMG não foram alterados: as ferramentas desta etapa preparam a biblioteca e o pSNES instalado a consome. Um novo painel SNES e sincronização pela interface continuam como próxima integração, sem reformulação visual automática. Não iniciar outras plataformas ou grande mudança de layout apenas por esta entrega.

@@ -1,5 +1,6 @@
 """Build a local pSNES library from explicitly selected ISO contents; no ROM downloads."""
 import hashlib
+import glob
 import io
 import json
 from pathlib import Path, PurePosixPath
@@ -11,6 +12,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 SUPPORTED = {'.sfc', '.smc', '.swc', '.fig', '.zip'}
+INPUT_SUFFIXES = SUPPORTED | {'.7z'}
 MAX_ROM = 64 * 1024 * 1024
 
 
@@ -115,7 +117,7 @@ def build(iso, dat, output_root, progress=print, preserve_names=()):
     names = set()
     for entry in listing:
         part = PurePosixPath(entry)
-        if not entry.startswith('ROMS/') or part.suffix.lower() not in SUPPORTED:
+        if not entry.startswith('ROMS/') or part.suffix.lower() not in INPUT_SUFFIXES:
             continue
         if '..' in part.parts or '\\' in entry or len(part.parts) != 2:
             raise ValueError('Caminho inesperado dentro da ISO.')
@@ -132,10 +134,30 @@ def build(iso, dat, output_root, progress=print, preserve_names=()):
     try:
         for number, (entry, name) in enumerate(selected, 1):
             # Explicit members only; never extract arbitrary archive paths to disk.
-            data = subprocess.check_output(['/usr/bin/bsdtar', '-xOf', str(iso), entry])
+            data = subprocess.check_output(['/usr/bin/bsdtar', '-xOf', str(iso), glob.escape(entry)])
             if len(data) > MAX_ROM:
                 raise ValueError('Arquivo da ISO ultrapassa 64 MiB.')
             expanded = [(name, data)]
+            if Path(name).suffix == '.7z':
+                archives = destination/'source-archives'; archives.mkdir(exist_ok=True)
+                archive_path = archives/name; archive_path.write_bytes(data)
+                members = subprocess.check_output(['/usr/bin/bsdtar', '-tf', str(archive_path)], text=True).splitlines()
+                expanded = []
+                for member in members:
+                    ext = PurePosixPath(member).suffix.lower()
+                    if ext not in SUPPORTED:
+                        continue
+                    stem = re.sub(r'[^A-Za-z0-9_.-]', '_', PurePosixPath(member).stem)
+                    target_name = Path(name).stem + '--' + stem + ext
+                    if target_name.casefold() in names:
+                        raise ValueError('Conflito de nomes ao abrir 7z.')
+                    names.add(target_name.casefold())
+                    content = subprocess.check_output(['/usr/bin/bsdtar', '-xOf', str(archive_path), glob.escape(member)])
+                    if len(content) > MAX_ROM:
+                        raise ValueError('ROM no 7z ultrapassa o limite.')
+                    expanded.append((target_name, content))
+                if not expanded:
+                    raise ValueError('7z sem ROMs SNES reconhecidas.')
             if Path(name).suffix == '.zip':
                 with zipfile.ZipFile(io.BytesIO(data)) as archive:
                     members = [i for i in archive.infolist() if not i.is_dir() and Path(i.filename).suffix.lower() in SUPPORTED - {'.zip'}]
