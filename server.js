@@ -6,7 +6,7 @@ const crypto = require('node:crypto');
 const { execFile } = require('node:child_process');
 
 const UI_PORT = Number(process.env.UI_PORT || 4173);
-const FILE_PORT = Number(process.env.FILE_PORT || 8080);
+const FILE_PORT = Number(process.env.FILE_PORT || 8081);
 let selectedFile = process.env.PKG_FILE || '';
 let allowedPs4Ip = '';
 let fileAccessToken = crypto.randomBytes(32).toString('hex');

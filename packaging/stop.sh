@@ -4,7 +4,7 @@ PID_FILE="$STATE_DIR/server.pid"
 if [[ -f "$PID_FILE" ]]; then
   IFS='|' read -r PID SERVER_PATH < "$PID_FILE"
   COMMAND="$(ps -p "$PID" -o command= 2>/dev/null)"
-  if [[ -n "$COMMAND" && "$COMMAND" == *"$SERVER_PATH"* ]] && lsof -n -a -p "$PID" -iTCP:4173 -sTCP:LISTEN >/dev/null 2>&1 && lsof -n -a -p "$PID" -iTCP:8080 -sTCP:LISTEN >/dev/null 2>&1; then
+  if [[ -n "$COMMAND" && "$COMMAND" == *"$SERVER_PATH"* ]] && lsof -n -a -p "$PID" -iTCP:4173 -sTCP:LISTEN >/dev/null 2>&1 && lsof -n -a -p "$PID" -iTCP:8081 -sTCP:LISTEN >/dev/null 2>&1; then
     kill "$PID"
     for attempt in {1..10}; do
       kill -0 "$PID" 2>/dev/null || break

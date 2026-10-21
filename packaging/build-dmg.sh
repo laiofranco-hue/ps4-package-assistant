@@ -23,7 +23,7 @@ PS4 Package Assistant para Mac
 5. Para parar o servidor, use o menu "Parar servidor de pacotes" ou feche o app.
 
 Requer macOS, Node.js 18 ou posterior e o Remote Package Installer em execução no PS4.
-O app não inclui jogos nem arquivos PKG. Portas: 4173 (interface local), 8080 (arquivo) e 12800 (API do PS4). O servidor de pacotes limita os pedidos ao IP informado do PS4 e exige um token aleatório por execução.
+O app não inclui jogos nem arquivos PKG. Portas: 4173 (interface local), 8081 (arquivo) e 12800 (API do PS4). O servidor de pacotes limita os pedidos ao IP informado do PS4 e exige um token aleatório por execução.
 TXT
 ln -s /Applications "$STAGE/Applications"
 hdiutil create -volname 'PS4 Package Assistant' -srcfolder "$STAGE" -ov -format UDZO "$ROOT/dist/PS4-Package-Assistant.dmg"

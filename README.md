@@ -20,7 +20,7 @@ The application does not include package files or game content.
 5. Keep the Mac awake and connected until the PS4 download finishes.
 6. To stop the local servers, use **Parar servidor de pacotes** in the app menu. Quitting the app also stops them.
 
-The app serves its interface on <http://127.0.0.1:4173> inside its own window. The package server listens on port `8080`; the PS4 API uses port `12800`. While a transfer is prepared, port `8080` serves only the selected package and requires a random access token plus the PS4 IP entered in the interface. The macOS firewall may ask to allow incoming connections.
+The app serves its interface on <http://127.0.0.1:4173> inside its own window. The package server listens on port `8081`; the PS4 API uses port `12800`. While a transfer is prepared, port `8081` serves only the selected package and requires a random access token plus the PS4 IP entered in the interface. The macOS firewall may ask to allow incoming connections.
 
 If macOS blocks the unsigned, non-notarized app, control-click it, choose **Open**, and confirm. Node.js 18 or later must be installed; the app searches Homebrew, NVM, Volta, asdf, and mise locations.
 

@@ -10,7 +10,7 @@ Se o macOS bloquear o app por segurança, clique com o botão direito nele, esco
 
 Para trocar o arquivo no meio de um envio, clique em "Interromper upload" e escolha outro .pkg. Para encerrar o servidor, use o menu "Parar servidor de pacotes" ou feche o app: ao fechar, o servidor para junto.
 
-Mantenha o Mac ligado e sem entrar em repouso até o download terminar. O servidor de pacotes escuta na porta 8080 e a interface local na porta 4173. O macOS pode pedir para permitir conexões de entrada. O log fica em ~/Library/Application Support/PS4 Package Assistant/server.log.
+Mantenha o Mac ligado e sem entrar em repouso até o download terminar. O servidor de pacotes escuta na porta 8081 e a interface local na porta 4173. O macOS pode pedir para permitir conexões de entrada. O log fica em ~/Library/Application Support/PS4 Package Assistant/server.log.
 
 Requisitos: macOS, Node.js 18 ou posterior e o Remote Package Installer ativo no PS4. O app procura o Node.js em instalações do Homebrew, NVM, Volta, asdf e mise.
 O seletor de arquivo usa o diálogo nativo do macOS (osascript). O app não baixa nem inclui conteúdo de jogos.
