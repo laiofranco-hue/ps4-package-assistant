@@ -1,6 +1,6 @@
 # Prova de SNES no PS4
 
-Preparação em 21/10/2026. Autorização do usuário: testar um emulador com pequena biblioteca antes da integração ao app. **Ainda não validado no console.** O app atual continua oferecendo catálogo de ROMs; esta etapa não adiciona conversão SNES → PKG nem sincronização remota.
+Preparação em 21/10/2026. Autorização do usuário: testar um emulador com pequena biblioteca antes da integração ao app. **Instalação e cópia de três ROMs confirmadas; execução, controles e salvamento ainda pendentes.** O app atual continua oferecendo catálogo de ROMs; esta etapa não adiciona conversão SNES → PKG nem sincronização remota.
 
 ## Candidato escolhido para o teste
 
@@ -47,8 +47,8 @@ A ferramenta não verifica compatibilidade da ROM, não abre FTP, não instala n
 |---|---|
 | Integridade do PKG baixado | Conferida localmente |
 | Ferramenta de preparação/cópia | Dois testes automatizados com fixtures passaram |
-| ROMs reais selecionadas | Pendente de caminho fornecido pelo usuário |
-| Transferência e instalação do pSNES | Pendente |
+| ROMs reais selecionadas | Três arquivos da ISO indicada pelo usuário, em cópias locais |
+| Transferência e instalação do pSNES | Confirmadas: bytes completos, erro zero e aplicativo presente |
 | Abertura do pSNES e biblioteca | Pendente |
 | Abertura dos jogos, controle, áudio/vídeo | Pendente |
 | Estado salvo e recarregado após reabrir | Pendente |
@@ -63,3 +63,11 @@ python3 -m unittest discover -s scripts -p 'test_prepare_snes.py' -v
 ```
 
 Os testes usam arquivos fictícios temporários, sem ROMs comerciais, acesso ao console ou envio de rede.
+
+## Prova real iniciada — 21/10/2026
+
+O usuário disponibilizou Remote Package Installer, FTP e a ISO em Downloads. O PS4 informou ausência de instalação anterior do pSNES; o pacote conferido foi enviado. A API confirmou todos os 37.814.272 bytes recebidos, erro zero, preparação/cópia em 100% e título instalado.
+
+Foram extraídas somente três ROMs selecionadas da ISO, com preservação dos atributos da origem, e preparadas em uma pasta local exclusiva. As três cópias foram enviadas por FTP para `/data/psnes/roms/`, em nomes temporários únicos, verificadas por releitura com SHA-256 e então renomeadas. Nenhum arquivo existente foi sobrescrito. O servidor temporário do teste foi encerrado somente após confirmar a transferência e a instalação.
+
+O usuário foi solicitado a abrir pSNES, confirmar a lista e testar imagem, áudio e botões. Essa confirmação e os testes de estado/salvamento interno continuam pendentes. Recibos, nomes dos jogos, hashes das ROMs e caminho da ISO ficam somente na área local de trabalho e na nota privada; não são distribuídos com o projeto. A integração ao app aguarda o resultado da prova.

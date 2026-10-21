@@ -87,3 +87,8 @@ Após confirmar novo envio bem-sucedido do Bomba Patch, o usuário autorizou o p
 [Procedimento e critérios de aceitação](TESTE-SNES-PS4.md) documentam fonte, pacote, preparo da biblioteca, instalação, controles e duas formas de salvamento. A ferramenta `scripts/prepare-snes-test.py` prepara cópias de 1–3 arquivos explicitamente escolhidos com manifesto de hashes e verificações pendentes. Não faz rede, não converte jogos em PKG e não altera o app instalado. Dois testes locais passaram com arquivos fictícios.
 
 Pendências reais: console não respondeu nos serviços conhecidos durante a inspeção; o usuário foi solicitado a abrir o Remote Package Installer e disponibilizar FTP do GoldHEN. A ISO SNES Station não está mais no caminho anterior de Downloads; solicitada a pasta atual da ISO/ROMs. Sem arquivos reais selecionados e sem acesso ao console, instalação, jogabilidade, controles e salvamento permanecem **não validados**. Não iniciar integração automática ou afirmar suporte até concluir essa prova com o usuário.
+
+
+### Prova real em andamento — 21/10/2026
+
+Com acesso disponibilizado pelo usuário, pSNES foi instalado no PS4: transferência completa, erro zero e presença do título confirmadas. Três ROMs da ISO indicada foram preparadas em cópias, enviadas para a pasta do emulador e verificadas por SHA-256 remoto, sem sobrescrever arquivos. Os impedimentos anteriores de acesso/caminho foram resolvidos. Aguardam-se testes pelo usuário de abertura, biblioteca, imagem, som, controles e salvamento. Não confundir instalação/cópia confirmadas com suporte SNES integrado ao app ou jogabilidade validada.
