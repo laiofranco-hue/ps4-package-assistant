@@ -57,3 +57,8 @@ Cópia concluída no PS4 em 21/10/2026: **1.046 entradas e 1.015 imagens distint
 Antes de publicar os metadados, três arquivos de saves/configuração foram copiados para backup local. Os arquivos de save permaneceram byte a byte iguais após a atualização. A lista anterior e a configuração original também ficaram em backups remotos. A única preferência alterada foi exibir os títulos do XML em vez dos nomes curtos dos arquivos. Não houve mudança nas configurações de emulação.
 
 O usuário foi solicitado a reabrir pSNES, conferir a lista, a capa de Mario e seu estado salvo. Essa verificação visual da coleção expandida permanece pendente. O teste anterior de Mario, controles, som e estado salvo continua confirmado pelo usuário; não se declara teste individual de todas as entradas.
+
+
+### Confirmação final do usuário — 21/10/2026
+
+Após reabrir o pSNES, o usuário confirmou: lista, capas e estado salvo de Mario funcionando. A verificação visual da coleção expandida está concluída para esses critérios. Isso não constitui teste de execução individual das 1.046 entradas nem confirmação separada de salvamento interno em todos os jogos.
