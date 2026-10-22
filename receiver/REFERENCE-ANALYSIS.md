@@ -168,6 +168,6 @@ preparation/copy100%, and the title existence check changed to true. Successive
 20-second counter samples measured 9.97–13.28 decimal MB/s over approximately
 321 seconds of recorded sampling. No claim is made that this identifies the
 network bottleneck or validates the accuracy of every instantaneous screen sample.
-The file server was stopped after completion. Game launch remains a separate
-operator check. Multiple queued packages, transfers over 4 GiB and restart
+The file server was stopped after completion. The operator subsequently confirmed
+the installed game reached its initial screen. Multiple queued packages, transfers over 4 GiB and restart
 recovery are still unverified on hardware.
