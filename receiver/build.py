@@ -15,6 +15,20 @@ CONTENT='IV0001-PKGA00001_00-PACKAGEASSIST001'
 def run(args,**kwargs):
     subprocess.run([str(i) for i in args],check=True,**kwargs)
 
+def stage_runtime_modules(sdk,stage):
+    """Package the OpenOrbis replacement modules required before main runs."""
+    destination=stage/'sce_module'
+    destination.mkdir(exist_ok=True)
+    hashes={}
+    for name in ('libc.prx','libSceFios2.prx'):
+        source=sdk/'src/modules'/name
+        data=source.read_bytes()
+        if len(data)<32 or data[:4]!=bytes.fromhex('4f153d1d'):
+            raise ValueError(f'Invalid OpenOrbis runtime module: {name}')
+        shutil.copyfile(source,destination/name)
+        hashes[name]=hashlib.sha256(data).hexdigest()
+    return hashes
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--sdk',required=True,type=Path)
@@ -42,6 +56,7 @@ def main():
     tools=sdk/'bin/macos';pkgtool=tools/'PkgTool.Core'
     env={**os.environ,'DOTNET_SYSTEM_GLOBALIZATION_INVARIANT':'1','OO_PS4_TOOLCHAIN':str(sdk)}
     run([tools/'create-fself-macos','-in='+str(elf),'-out='+str(out/'receiver.oelf'),'--eboot',stage/'eboot.bin','--paid','0x3800000000000011'],env=env)
+    runtime_modules=stage_runtime_modules(sdk,stage)
     system=stage/'sce_sys';system.mkdir(exist_ok=True)
     # Code-generated icon for this proof, without game art or external font files.
     from PIL import Image,ImageDraw
@@ -49,7 +64,7 @@ def main():
     draw.rectangle((70,125,442,155),fill='#72a7ff');draw.rectangle((70,215,350,245),fill='#72a7ff');draw.rectangle((70,305,260,335),fill='#72a7ff')
     icon.save(system/'icon0.png')
     sfo=system/'param.sfo';run([pkgtool,'sfo_new',sfo],env=env)
-    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.12'),'ATTRIBUTE':('Integer',4,'0'),'CATEGORY':('Utf8',4,'gd'),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.12')}
+    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.13'),'ATTRIBUTE':('Integer',4,'0'),'CATEGORY':('Utf8',4,'gd'),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.13')}
     for key,(kind,size,value) in entries.items():run([pkgtool,'sfo_setentry',sfo,key,'--type',kind,'--maxsize',size,'--value',value],env=env)
     about=system/'about';about.mkdir(exist_ok=True)
     (about/'NOTICE.txt').write_text('Diagnostic homebrew built with OpenOrbis v0.5.4. Source and test status: ps4-package-assistant/receiver. cJSON v1.7.19 MIT license included. Not an official Sony application.\n')
@@ -63,7 +78,7 @@ def main():
     print(validation.stdout,end='')
     if '[FAIL]' in validation.stdout or '[ERROR]' in validation.stdout or validation.stdout.count('[OK]')<25:
         raise ValueError('A validação do PKG não confirmou todos os critérios esperados.')
-    report={'title_id':title_id,'content_id':content,'file':str(pkg),'bytes':pkg.stat().st_size,'sha256':hashlib.sha256(pkg.read_bytes()).hexdigest(),'pkg_checks':validation.stdout.count('[OK]'),'status':'built-not-console-validated'}
+    report={'title_id':title_id,'content_id':content,'file':str(pkg),'bytes':pkg.stat().st_size,'sha256':hashlib.sha256(pkg.read_bytes()).hexdigest(),'runtime_modules':runtime_modules,'pkg_checks':validation.stdout.count('[OK]'),'status':'built-not-console-validated'}
     (out/'build.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()

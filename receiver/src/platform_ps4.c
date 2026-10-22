@@ -52,13 +52,13 @@ static int installer_modules(char *error,size_t size){
 }
 
 void platform_trace(const char *stage,int code){
-    sceKernelDebugOutText(0,"[PKGA 0.12] %s code=%08X\n",stage,(unsigned)code);
+    sceKernelDebugOutText(0,"[PKGA 0.13] %s code=%08X\n",stage,(unsigned)code);
 }
 int platform_init(char ip[16],char *error,size_t size){
     enum OrbisSysModuleInternal modules[]={ORBIS_SYSMODULE_INTERNAL_SYSCORE,ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE,ORBIS_SYSMODULE_INTERNAL_USER_SERVICE,ORBIS_SYSMODULE_INTERNAL_NET,ORBIS_SYSMODULE_INTERNAL_NETCTL,ORBIS_SYSMODULE_INTERNAL_APP_INST_UTIL,ORBIS_SYSMODULE_INTERNAL_BGFT};
     snprintf(ip,16,"0.0.0.0");
     for(size_t i=0;i<sizeof(modules)/sizeof(modules[0]);i++){
-        sceKernelDebugOutText(0,"[PKGA 0.12] load module=%08X\n",(unsigned)modules[i]);
+        sceKernelDebugOutText(0,"[PKGA 0.13] load module=%08X\n",(unsigned)modules[i]);
         int code=(int)sceSysmoduleLoadModuleInternal(modules[i]);
         platform_trace("module returned",code);
         /* Some modules are already loaded by startup. Initialization below is authoritative. */

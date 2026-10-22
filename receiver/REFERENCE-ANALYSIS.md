@@ -60,3 +60,22 @@ our `main` was reached remain unknown. Receiver 0.12 adds kernel-log markers at
 entry to main, before/after each module load, service initialization and video
 initialization. This is a diagnostic build, not a claimed fix. It must be launched
 on the console and its new markers inspected before changing more components.
+
+## Follow-up: required OpenOrbis runtime modules (0.13)
+
+The 0.12 launch still reports the same PRX error, with no `[PKGA 0.12]` entry
+marker in the collected kernel log. Missing markers do not independently prove
+control flow, but this narrows the investigation to startup and logging setup.
+The package build omitted `sce_module/libc.prx` and
+`sce_module/libSceFios2.prx`. The bundled SDK samples include both. The official
+[OpenOrbis source documentation](https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/blob/master/src/README.md)
+explicitly says these empty replacement modules are needed in packages.
+These are OpenOrbis replacements, not modules copied from the reference app.
+
+Build 0.13 stages both modules from the supplied SDK, rejects missing/invalid
+module files and records their hashes. Two packaging regression tests and the
+native protocol/model test passed. A fresh extraction of the built receiver PKG
+confirmed both embedded module hashes match the SDK sources. Both the receiver
+and harmless probe were rebuilt; earlier probes also lacked these modules and
+must not be used for the next console test. The packaging omission is confirmed;
+whether it is the only launch problem still requires hardware validation.
