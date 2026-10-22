@@ -50,3 +50,5 @@ void screen_flip(uint32_t **pixels){
     fprintf(f,"P6\n%d %d\n255\n",sw,sh);
     for(int i=0;i<sw*sh;i++){unsigned char rgb[3]={(memory[i]>>16)&255,(memory[i]>>8)&255,memory[i]&255};fwrite(rgb,1,3,f);}fclose(f);rename(temp,path);
 }
+
+void platform_trace(const char *stage,int code){(void)stage;(void)code;}

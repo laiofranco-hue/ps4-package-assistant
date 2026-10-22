@@ -70,19 +70,24 @@ static void *serve(void *unused){
     }
 }
 int main(int argc,char **argv){
+    platform_trace("main entered",0);
     setvbuf(stdout,NULL,_IONBF,0);
 #ifndef __ORBIS__
     if(argc>1)port=atoi(argv[1]);
 #else
     (void)argc;(void)argv;
 #endif
+    platform_trace("platform init begin",0);
     model.ready=platform_init(model.ip,model.message,sizeof(model.message))==0;
+    platform_trace("platform init finished",model.ready?0:-1);
     if(model.ready)snprintf(model.message,sizeof(model.message),"PRONTO PARA RECEBER. FILA CONTROLADA PELO MAC.");
 #ifndef __ORBIS__
     snprintf(model.message,sizeof(model.message),"SIMULADOR NO MAC - NENHUM PKG E INSTALADO NESTE MODO.");
 #endif
     uint32_t *pixels=NULL;
+    platform_trace("screen open begin",0);
     if(screen_open(&pixels,1280,720)){fprintf(stderr,"Video initialization failed\n");return 1;}
+    platform_trace("screen ready",0);
     pthread_t thread;if(pthread_create(&thread,NULL,serve,NULL))return 1;
     printf("Receiver listening on %d; ready=%d\n",port,model.ready);
     for(;;){Model snapshot;pthread_mutex_lock(&guard);snapshot=model;pthread_mutex_unlock(&guard);

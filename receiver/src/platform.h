@@ -14,6 +14,7 @@ typedef struct {
 _Static_assert(sizeof(Progress)==64,"BGFT progress ABI");
 _Static_assert(offsetof(Progress,downloaded)==32,"BGFT downloaded offset");
 
+void platform_trace(const char *stage,int code);
 int platform_init(char ip[16], char *error, size_t size);
 int platform_install(const char *content_id,const char *url,const char *title,uint64_t size,int *task);
 int platform_progress(int task, Progress *progress);

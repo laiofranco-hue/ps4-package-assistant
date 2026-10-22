@@ -40,6 +40,7 @@ static int installer_modules(char *error,size_t size){
     int handle=-1;const char *last=NULL;
     for(size_t i=0;i<sizeof(imports)/sizeof(imports[0]);i++){
         if(!last||strcmp(last,imports[i].path)){
+            platform_trace(imports[i].path,0);
             handle=(int)sceKernelLoadStartModule(imports[i].path,0,NULL,0,NULL,NULL);
             if(handle<0){snprintf(error,size,"MODULO %08X",(unsigned)handle);return handle;}
             last=imports[i].path;
@@ -50,24 +51,32 @@ static int installer_modules(char *error,size_t size){
     return 0;
 }
 
+void platform_trace(const char *stage,int code){
+    sceKernelDebugOutText(0,"[PKGA 0.12] %s code=%08X\n",stage,(unsigned)code);
+}
 int platform_init(char ip[16],char *error,size_t size){
     enum OrbisSysModuleInternal modules[]={ORBIS_SYSMODULE_INTERNAL_SYSCORE,ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE,ORBIS_SYSMODULE_INTERNAL_USER_SERVICE,ORBIS_SYSMODULE_INTERNAL_NET,ORBIS_SYSMODULE_INTERNAL_NETCTL,ORBIS_SYSMODULE_INTERNAL_APP_INST_UTIL,ORBIS_SYSMODULE_INTERNAL_BGFT};
     snprintf(ip,16,"0.0.0.0");
     for(size_t i=0;i<sizeof(modules)/sizeof(modules[0]);i++){
+        sceKernelDebugOutText(0,"[PKGA 0.12] load module=%08X\n",(unsigned)modules[i]);
         int code=(int)sceSysmoduleLoadModuleInternal(modules[i]);
+        platform_trace("module returned",code);
         /* Some modules are already loaded by startup. Initialization below is authoritative. */
         (void)code;
     }
-    sceNetInit();sceNetCtlInit();OrbisNetCtlInfo info={0};
+    platform_trace("net init",0);sceNetInit();sceNetCtlInit();OrbisNetCtlInfo info={0};
     int code=sceNetCtlGetInfo(ORBIS_NET_CTL_INFO_IP_ADDRESS,&info);
     if(code){snprintf(error,size,"REDE/IP %08X",(unsigned)code);return code;}
     snprintf(ip,16,"%s",info.ip_address);
     sceUserServiceInitialize(NULL);
+    platform_trace("resolve installer modules",0);
     code=installer_modules(error,size);if(code)return code;
+    platform_trace("appinst init",0);
     code=sceAppInstUtilInitialize();
     if(code){snprintf(error,size,"APPINST INIT %08X",(unsigned)code);return code;}
     BgftInit init={calloc(1,1024*1024),1024*1024};
     if(!init.heap){snprintf(error,size,"SEM MEMORIA PARA BGFT");return -1;}
+    platform_trace("bgft init",0);
     code=sceBgftServiceIntInit(&init);if(code){snprintf(error,size,"BGFT INIT %08X",(unsigned)code);return code;}
     return 0;
 }
