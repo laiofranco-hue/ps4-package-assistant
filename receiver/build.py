@@ -38,7 +38,7 @@ def main():
         obj=objects/(source.stem+'.o');object_files.append(obj)
         run([clang,'--target=x86_64-pc-freebsd12-elf','-std=c11','-fPIC','-O2','-D__ORBIS__','-DCJSON_NESTING_LIMIT=16','-isysroot',sdk,'-isystem',sdk/'include','-Wall','-Wextra','-c',source,'-o',obj])
     elf=out/'receiver.elf'
-    run([linker,'-m','elf_x86_64','-pie','--script',sdk/'link.x','--eh-frame-hdr','-L'+str(sdk/'lib'),*object_files,sdk/'lib/crt1.o','-lc','-lm','-lpthread','-lkernel','-lSceNet','-lSceNetCtl','-lSceBgft','-lSceAppInstUtil','-lSceUserService','-lSceSysmodule','-lSceVideoOut','-o',elf])
+    run([linker,'-m','elf_x86_64','-pie','--script',sdk/'link.x','--eh-frame-hdr','-L'+str(sdk/'lib'),*object_files,sdk/'lib/crt1.o','-lc','-lm','-lpthread','-lkernel','-lSceNet','-lSceNetCtl','-lSceUserService','-lSceSysmodule','-lSceVideoOut','-o',elf])
     tools=sdk/'bin/macos';pkgtool=tools/'PkgTool.Core'
     env={**os.environ,'DOTNET_SYSTEM_GLOBALIZATION_INVARIANT':'1','OO_PS4_TOOLCHAIN':str(sdk)}
     run([tools/'create-fself-macos','-in='+str(elf),'-out='+str(out/'receiver.oelf'),'--eboot',stage/'eboot.bin','--paid','0x3800000000000011'],env=env)
@@ -49,7 +49,7 @@ def main():
     draw.rectangle((70,125,442,155),fill='#72a7ff');draw.rectangle((70,215,350,245),fill='#72a7ff');draw.rectangle((70,305,260,335),fill='#72a7ff')
     icon.save(system/'icon0.png')
     sfo=system/'param.sfo';run([pkgtool,'sfo_new',sfo],env=env)
-    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.10'),'ATTRIBUTE':('Integer',4,'0'),'CATEGORY':('Utf8',4,'gd'),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.10')}
+    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.11'),'ATTRIBUTE':('Integer',4,'0'),'CATEGORY':('Utf8',4,'gd'),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.11')}
     for key,(kind,size,value) in entries.items():run([pkgtool,'sfo_setentry',sfo,key,'--type',kind,'--maxsize',size,'--value',value],env=env)
     about=system/'about';about.mkdir(exist_ok=True)
     (about/'NOTICE.txt').write_text('Diagnostic homebrew built with OpenOrbis v0.5.4. Source and test status: ps4-package-assistant/receiver. cJSON v1.7.19 MIT license included. Not an official Sony application.\n')

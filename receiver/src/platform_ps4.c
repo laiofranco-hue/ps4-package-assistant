@@ -7,7 +7,7 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/UserService.h>
-#include <orbis/AppInstUtil.h>
+/* Internal installer modules must not become startup PRX dependencies. */
 #include <orbis/VideoOut.h>
 #include <orbis/Net.h>
 #include <orbis/NetCtl.h>
@@ -21,10 +21,34 @@ typedef struct {
     uint64_t size;
 } BgftDownload;
 _Static_assert(sizeof(BgftDownload)==104,"BGFT download ABI");
-extern int sceBgftServiceIntInit(BgftInit *);
-extern int sceBgftServiceIntDownloadRegisterTask(BgftDownload *,int *);
-extern int sceBgftServiceDownloadStartTask(int);
-extern int sceBgftServiceDownloadGetProgress(int,Progress *);
+static int (*sceBgftServiceIntInit)(BgftInit *);
+static int (*sceBgftServiceIntDownloadRegisterTask)(BgftDownload *,int *);
+static int (*sceBgftServiceDownloadStartTask)(int);
+static int (*sceBgftServiceDownloadGetProgress)(int,Progress *);
+
+static int (*sceAppInstUtilInitialize)(void);
+static int (*sceAppInstUtilAppExists)(const char *,int *);
+static int installer_modules(char *error,size_t size){
+    struct {const char *path;const char *symbol;void **target;} imports[]={
+        {"/system/common/lib/libSceAppInstUtil.sprx","sceAppInstUtilInitialize",(void**)&sceAppInstUtilInitialize},
+        {"/system/common/lib/libSceAppInstUtil.sprx","sceAppInstUtilAppExists",(void**)&sceAppInstUtilAppExists},
+        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceIntInit",(void**)&sceBgftServiceIntInit},
+        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceIntDownloadRegisterTask",(void**)&sceBgftServiceIntDownloadRegisterTask},
+        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceDownloadStartTask",(void**)&sceBgftServiceDownloadStartTask},
+        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceDownloadGetProgress",(void**)&sceBgftServiceDownloadGetProgress}
+    };
+    int handle=-1;const char *last=NULL;
+    for(size_t i=0;i<sizeof(imports)/sizeof(imports[0]);i++){
+        if(!last||strcmp(last,imports[i].path)){
+            handle=(int)sceKernelLoadStartModule(imports[i].path,0,NULL,0,NULL,NULL);
+            if(handle<0){snprintf(error,size,"MODULO %08X",(unsigned)handle);return handle;}
+            last=imports[i].path;
+        }
+        int code=sceKernelDlsym(handle,imports[i].symbol,imports[i].target);
+        if(code||!*imports[i].target){snprintf(error,size,"SIMBOLO %08X",(unsigned)code);return code?code:-1;}
+    }
+    return 0;
+}
 
 int platform_init(char ip[16],char *error,size_t size){
     enum OrbisSysModuleInternal modules[]={ORBIS_SYSMODULE_INTERNAL_SYSCORE,ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE,ORBIS_SYSMODULE_INTERNAL_USER_SERVICE,ORBIS_SYSMODULE_INTERNAL_NET,ORBIS_SYSMODULE_INTERNAL_NETCTL,ORBIS_SYSMODULE_INTERNAL_APP_INST_UTIL,ORBIS_SYSMODULE_INTERNAL_BGFT};
@@ -39,6 +63,7 @@ int platform_init(char ip[16],char *error,size_t size){
     if(code){snprintf(error,size,"REDE/IP %08X",(unsigned)code);return code;}
     snprintf(ip,16,"%s",info.ip_address);
     sceUserServiceInitialize(NULL);
+    code=installer_modules(error,size);if(code)return code;
     code=sceAppInstUtilInitialize();
     if(code){snprintf(error,size,"APPINST INIT %08X",(unsigned)code);return code;}
     BgftInit init={calloc(1,1024*1024),1024*1024};

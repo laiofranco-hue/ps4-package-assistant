@@ -45,3 +45,17 @@ O Mac serve o manifesto e o PKG sob o mesmo token aleatório e restrição ao IP
 O receptor ainda é um protótipo para teste local: não tem pareamento, fila persistente no console, capas ou carrossel. Guarda até 24 tarefas recebidas durante sua execução e mostra as cinco mais recentes; tarefas futuras ainda não enviadas permanecem na fila do Mac. Não retoma/reenvia nada ao reiniciar. Consultas nativas rodam fora do bloqueio usado pelo desenho da tela. Manter o Mac e o receptor abertos durante a prova. Não é substituição estável do RPI antes da validação no hardware.
 
 Estado inicial: receptor e prova gerados e verificados; teste em console pendente. O aplicativo de Mac foi preparado para enviar metadados de pacotes base compatíveis e preservar respostas de atenção. Nenhum jogo fornecido pelo usuário foi empacotado nestes dois PKGs.
+
+### Console validation: launch correction (0.11)
+
+The first 0.10 package installed fully, but the console refused to launch it.
+A read-only copy of the installed PKG matched the local SHA-256 exactly.
+The console kernel log reported `0xa0020102 (PRX_SCE_MODULE_LOAD_ERROR)`
+and a missing PRX at startup. This is a launch failure, not transfer validation.
+
+Version 0.11 removes BGFT and AppInstUtil from startup dependencies and
+resolves their functions only after loading the internal services. Module or
+symbol failures become diagnostic initialization errors. Package integrity
+and host protocol tests do not establish console compatibility; a new launch
+and harmless probe installation are still required. Never automatically
+delete/reinstall an application in response to this generic corruption dialog.
