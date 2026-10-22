@@ -142,3 +142,19 @@ Version 0.17 explicitly loads `ORBIS_SYSMODULE_INTERNAL_VIDEO_OUT` before the
 first VideoOut call, records the return value and returns a module-load error
 instead of proceeding when that load fails. It preserves the 0.16 service
 profile. Separate identity: PKGA00006. Console launch and transfer remain to test.
+
+## Basic hardware proof completed (0.17)
+
+On 2026-10-22 the installed PKGA00006 package hash matched the generated 0.17
+build. Its live health endpoint reported version 0.1.7 and `ready:true`.
+PKGA00002 was absent before the test. The Mac then sent the harmless 0.13 probe
+through our own receiver, which registered task363. Native progress reported
+6,619,136 of 6,619,136 bytes, error0 and preparation/copy100%. The receiver's
+existence endpoint returned true; a read-only hash of the installed probe PKG
+matched its input SHA-256. The operator confirmed the completed task and that
+the probe opened successfully with OK. No existing game/save was used or removed.
+
+This establishes the basic receive/install/progress/display path on this console.
+Large packages, multiple queued transfers, sustained speed accuracy and long-run
+stability remain unverified. Use the 0.17 receiver and the probe with bundled
+OpenOrbis runtime modules; earlier failed builds are historical evidence only.

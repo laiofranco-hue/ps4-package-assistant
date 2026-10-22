@@ -8,7 +8,7 @@ Primeira versão limitada a um PKG completo de aplicativo/jogo por pedido. Pacot
 
 Referências: [API do RPI](https://github.com/flatz/ps4_remote_pkg_installer), [OpenOrbis](https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain), [ABI BGFT publicada](https://github.com/flatz/ps4_stub_lib_maker_v2/blob/master/include/bgft.h). Implementação própria, sem copiar o código do RPI. Os contadores de BGFT são de 64 bits; não usar a definição de 32 bits do cabeçalho histórico OpenOrbis para esta interface.
 
-Dependência de parsing: cJSON v1.7.19 (MIT), licença em vendor/LICENSE. SDK, ferramentas e PKGs construídos permanecem fora do Git. REA será usado se uma dúvida concreta exigir inspeção de binário; os fontes disponíveis permitem começar diretamente.
+Dependência de parsing: cJSON v1.7.19 (MIT), licença em vendor/LICENSE. SDK, ferramentas e PKGs construídos permanecem fora do Git. A análise REA do instalador fornecido e os resultados de hardware estão documentados em REFERENCE-ANALYSIS.md.
 
 ## Construção no Mac
 
@@ -17,9 +17,11 @@ SDK fixado em dependencies.json. Compilação verificada com LLVM/lld 23.1.3 em 
 ```sh
 python3 receiver/build.py --sdk "$OO_PS4_TOOLCHAIN"
 python3 receiver/build.py --sdk "$OO_PS4_TOOLCHAIN" --probe
+# Identidade separada usada na prova 0.17 (PKGA00006):
+python3 receiver/build.py --sdk "$OO_PS4_TOOLCHAIN" --alternate-receiver
 ```
 
-`PS4_CC` e `PS4_LD` permitem informar caminhos de clang/ld.lld. Por padrão os arquivos são gerados na área local ps4-package-assistant-local/outputs/receiver/ps4. O relatório build.json informa hash, tamanho e verificações de integridade. O pacote receptor usa Title ID **PKGA00001**; a prova de envio usa **PKGA00002**, mostra OK ao abrir e não acessa jogos, saves ou rede. O build rejeita saídas em pastas de nuvem usuais. Verificação de PKG não comprova execução no aparelho.
+`PS4_CC` e `PS4_LD` permitem informar caminhos de clang/ld.lld. Por padrão os arquivos são gerados na área local ps4-package-assistant-local/outputs/receiver/ps4. O relatório build.json informa hash, tamanho e verificações de integridade. O pacote receptor padrão usa Title ID **PKGA00001**; `--alternate-receiver` gera o teste 0.17 **PKGA00006**, nome **PS4 Package Assistant - Teste 0.17**; a prova de envio usa **PKGA00002**, mostra OK ao abrir e não acessa jogos, saves ou rede. O build rejeita saídas em pastas de nuvem usuais. Verificação de PKG não comprova execução no aparelho.
 
 ## Teste no console
 
@@ -42,9 +44,9 @@ O segundo comando compila o código C no Mac com adaptador simulado e roda tamb�
 
 O Mac serve o manifesto e o PKG sob o mesmo token aleatório e restrição ao IP selecionado. O manifesto é derivado do cabeçalho do arquivo escolhido; se ele mudar, o servidor recusa acesso. A rota original de PKGs e o RPI anterior continuam suportados. Tarefa registrada mas não iniciada fica em atenção, preservando o ID para consultar sem reinstalar.
 
-O receptor ainda é um protótipo para teste local: não tem pareamento, fila persistente no console, capas ou carrossel. Guarda até 24 tarefas recebidas durante sua execução e mostra as cinco mais recentes; tarefas futuras ainda não enviadas permanecem na fila do Mac. Não retoma/reenvia nada ao reiniciar. Consultas nativas rodam fora do bloqueio usado pelo desenho da tela. Manter o Mac e o receptor abertos durante a prova. Não é substituição estável do RPI antes da validação no hardware.
+O receptor ainda é um protótipo para teste local: não tem pareamento, fila persistente no console, capas ou carrossel. Guarda até 24 tarefas recebidas durante sua execução e mostra as cinco mais recentes; tarefas futuras ainda não enviadas permanecem na fila do Mac. Não retoma/reenvia nada ao reiniciar. Consultas nativas rodam fora do bloqueio usado pelo desenho da tela. Manter o Mac e o receptor abertos durante a prova. A validação abaixo comprova uma transferência pequena; estabilidade, fila de vários pacotes e taxa sustentada ainda precisam de testes próprios.
 
-Estado inicial: receptor e prova gerados e verificados; teste em console pendente. O aplicativo de Mac foi preparado para enviar metadados de pacotes base compatíveis e preservar respostas de atenção. Nenhum jogo fornecido pelo usuário foi empacotado nestes dois PKGs.
+Validação no PS4 em 22/10/2026: receptor 0.17/API0.1.7 respondeu `ready:true` e instalou a prova PKGA00002 (6.619.136 bytes), tarefa363, sem erro. Progresso total e preparação/cópia chegaram a100%; is_exists confirmou o título, e leitura do app.pkg instalado confirmou hash igual ao arquivo enviado. O usuário confirmou a tarefa na tela e a abertura da prova com OK. Teste básico concluído; não valida ainda jogos grandes, fila longa, MB/s sustentado ou retomada. Nenhum jogo fornecido pelo usuário foi empacotado para esta prova. Versões anteriores foram preservadas; usar o ícone que termina em0.17 para este teste.
 
 ### Console validation: launch correction (0.11)
 
