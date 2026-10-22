@@ -114,3 +114,18 @@ profile. The harmless probe keeps its ordinary application profile. Reports now
 record these profile fields. This is a testable compatibility hypothesis, not
 proof that all service permissions or BGFT transfers work. The separate 0.15
 test identity is PKGA00004; existing test applications remain intact.
+
+On 0.15, kernel markers again show startup and AppInstUtil rejection, now
+explicitly for caller `3100000000000002`; changing that identifier and the SFO
+was insufficient. There was no HTTP listener at the time of the follow-up.
+
+The reference's fake-SELF signature area additionally contains a 136-byte
+authentication/capability record, whereas our 0.15 signature area is zero-filled.
+The SDK's create-fself `--authinfo` option serializes this record. Build 0.16
+supplies the observed public capability fields for the receiver, retaining the
+ordinary probe profile. These are flags in a fake-SELF header, not a signing key,
+credential, or copied executable. Direct readback of the built SELF confirmed
+all 136 expected bytes, SHA-256
+`4a34b683efe03431051c361989ed5855b759f8e2013fa65330c414f214bdf679`.
+The build report records that digest. Tests and package validation passed;
+runtime authorization is still unverified. Separate 0.16 identity: PKGA00005.

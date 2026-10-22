@@ -6,11 +6,19 @@ import json
 import os
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import tempfile
 
 ROOT=Path(__file__).resolve().parent
 CONTENT='IV0001-PKGA00001_00-PACKAGEASSIST001'
+# Public fake-SELF capability metadata observed in the supplied working installer;
+# these flags are not a signing key or a credential.
+RECEIVER_AUTH_WORDS=(
+    0x3100000000000002, 0x40001c0000000000, 0x800000000000ff00, 0x0, 0x0,
+    0x4000400080000000, 0x8000000000000000, 0x800000000000000, 0xf0000000ffff4000,
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+)
 
 def run(args,**kwargs):
     subprocess.run([str(i) for i in args],check=True,**kwargs)
@@ -33,13 +41,13 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--sdk',required=True,type=Path)
     parser.add_argument('--output',type=Path,default=Path.home()/'.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/receiver/ps4')
-    parser.add_argument('--alternate-receiver',action='store_true',help='Build 0.15 as PKGA00004 to preserve an installed receiver')
+    parser.add_argument('--alternate-receiver',action='store_true',help='Build 0.16 as PKGA00005 to preserve an installed receiver')
     parser.add_argument('--probe',action='store_true',help='Build a separate harmless install/launch test package')
     args=parser.parse_args();sdk=args.sdk.resolve(strict=True);out=args.output.resolve()
     content=CONTENT;title_id='PKGA00001';title='PS4 Package Assistant - Teste'
     if args.alternate_receiver:
         if args.probe:raise ValueError('Choose receiver or probe, not both.')
-        out=out/'alternate';content='IV0001-PKGA00004_00-PACKAGETEST00015';title_id='PKGA00004';title='PS4 Package Assistant - Teste 0.15'
+        out=out/'alternate';content='IV0001-PKGA00005_00-PACKAGETEST00016';title_id='PKGA00005';title='PS4 Package Assistant - Teste 0.16'
     if args.probe:
         out=out/'probe';content='IV0001-PKGA00002_00-TRANSFERTEST0001';title_id='PKGA00002';title='PS4 Assistant - Prova de envio'
     home=Path.home()
@@ -64,7 +72,8 @@ def main():
     attribute='0' if args.probe else '18'
     tools=sdk/'bin/macos';pkgtool=tools/'PkgTool.Core'
     env={**os.environ,'DOTNET_SYSTEM_GLOBALIZATION_INVARIANT':'1','OO_PS4_TOOLCHAIN':str(sdk)}
-    run([tools/'create-fself-macos','-in='+str(elf),'-out='+str(out/'receiver.oelf'),'--eboot',stage/'eboot.bin','--paid',paid],env=env)
+    auth_args=[] if args.probe else ['--authinfo',struct.pack('<17Q',*RECEIVER_AUTH_WORDS).hex()]
+    run([tools/'create-fself-macos','-in='+str(elf),'-out='+str(out/'receiver.oelf'),'--eboot',stage/'eboot.bin','--paid',paid,*auth_args],env=env)
     runtime_modules=stage_runtime_modules(sdk,stage)
     system=stage/'sce_sys';system.mkdir(exist_ok=True)
     # Code-generated icon for this proof, without game art or external font files.
@@ -73,7 +82,7 @@ def main():
     draw.rectangle((70,125,442,155),fill='#72a7ff');draw.rectangle((70,215,350,245),fill='#72a7ff');draw.rectangle((70,305,260,335),fill='#72a7ff')
     icon.save(system/'icon0.png')
     sfo=system/'param.sfo';run([pkgtool,'sfo_new',sfo],env=env)
-    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.15'),'ATTRIBUTE':('Integer',4,attribute),'CATEGORY':('Utf8',4,category),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.15')}
+    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.16'),'ATTRIBUTE':('Integer',4,attribute),'CATEGORY':('Utf8',4,category),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.16')}
     for key,(kind,size,value) in entries.items():run([pkgtool,'sfo_setentry',sfo,key,'--type',kind,'--maxsize',size,'--value',value],env=env)
     about=system/'about';about.mkdir(exist_ok=True)
     (about/'NOTICE.txt').write_text('Diagnostic homebrew built with OpenOrbis v0.5.4. Source and test status: ps4-package-assistant/receiver. cJSON v1.7.19 MIT license included. Not an official Sony application.\n')
@@ -87,7 +96,7 @@ def main():
     print(validation.stdout,end='')
     if '[FAIL]' in validation.stdout or '[ERROR]' in validation.stdout or validation.stdout.count('[OK]')<25:
         raise ValueError('A validação do PKG não confirmou todos os critérios esperados.')
-    report={'title_id':title_id,'content_id':content,'file':str(pkg),'bytes':pkg.stat().st_size,'sha256':hashlib.sha256(pkg.read_bytes()).hexdigest(),'authority_id':paid,'category':category,'attribute':int(attribute),'runtime_modules':runtime_modules,'pkg_checks':validation.stdout.count('[OK]'),'status':'built-not-console-validated'}
+    report={'title_id':title_id,'content_id':content,'file':str(pkg),'bytes':pkg.stat().st_size,'sha256':hashlib.sha256(pkg.read_bytes()).hexdigest(),'authority_id':paid,'auth_info_sha256':None if args.probe else hashlib.sha256(struct.pack('<17Q',*RECEIVER_AUTH_WORDS)).hexdigest(),'category':category,'attribute':int(attribute),'runtime_modules':runtime_modules,'pkg_checks':validation.stdout.count('[OK]'),'status':'built-not-console-validated'}
     (out/'build.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()
