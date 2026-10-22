@@ -129,3 +129,16 @@ all 136 expected bytes, SHA-256
 `4a34b683efe03431051c361989ed5855b759f8e2013fa65330c414f214bdf679`.
 The build report records that digest. Tests and package validation passed;
 runtime authorization is still unverified. Separate 0.16 identity: PKGA00005.
+
+The operator's 0.16 launch produced CE-34878-0. Its kernel log confirms every
+installer module loaded successfully, AppInstUtil/BGFT initialization returned
+zero, and platform initialization finished successfully. The crash then occurred
+at `screen_open`, with `PRX_NOT_RESOLVED_FUNCTION` identifying `libSceVideoOut`
+as the required module. No VideoOut library appeared in the loaded-module list.
+Thus the capability record fixed the observed installer-module authorization;
+it did not establish a functioning transfer or screen.
+
+Version 0.17 explicitly loads `ORBIS_SYSMODULE_INTERNAL_VIDEO_OUT` before the
+first VideoOut call, records the return value and returns a module-load error
+instead of proceeding when that load fails. It preserves the 0.16 service
+profile. Separate identity: PKGA00006. Console launch and transfer remain to test.

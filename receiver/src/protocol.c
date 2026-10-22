@@ -34,7 +34,7 @@ char *command(Model *m,const char *route,const char *body,int *status){
     if(!cJSON_IsObject(root)){*status=400;r=failure(-1,"JSON invalido.");goto done;}
     if(!strcmp(route,"/api/health")){
         r=cJSON_CreateObject();cJSON_AddStringToObject(r,"receiver","ps4-package-assistant");
-        cJSON_AddStringToObject(r,"version","0.1.6");cJSON_AddBoolToObject(r,"ready",m->ready);goto done;
+        cJSON_AddStringToObject(r,"version","0.1.7");cJSON_AddBoolToObject(r,"ready",m->ready);goto done;
     }
     if(!m->ready){*status=503;r=failure(-2,m->message);goto done;}
     if(!strcmp(route,"/api/is_exists")){

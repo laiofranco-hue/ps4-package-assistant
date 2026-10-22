@@ -41,13 +41,13 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--sdk',required=True,type=Path)
     parser.add_argument('--output',type=Path,default=Path.home()/'.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/receiver/ps4')
-    parser.add_argument('--alternate-receiver',action='store_true',help='Build 0.16 as PKGA00005 to preserve an installed receiver')
+    parser.add_argument('--alternate-receiver',action='store_true',help='Build 0.17 as PKGA00006 to preserve an installed receiver')
     parser.add_argument('--probe',action='store_true',help='Build a separate harmless install/launch test package')
     args=parser.parse_args();sdk=args.sdk.resolve(strict=True);out=args.output.resolve()
     content=CONTENT;title_id='PKGA00001';title='PS4 Package Assistant - Teste'
     if args.alternate_receiver:
         if args.probe:raise ValueError('Choose receiver or probe, not both.')
-        out=out/'alternate';content='IV0001-PKGA00005_00-PACKAGETEST00016';title_id='PKGA00005';title='PS4 Package Assistant - Teste 0.16'
+        out=out/'alternate';content='IV0001-PKGA00006_00-PACKAGETEST00017';title_id='PKGA00006';title='PS4 Package Assistant - Teste 0.17'
     if args.probe:
         out=out/'probe';content='IV0001-PKGA00002_00-TRANSFERTEST0001';title_id='PKGA00002';title='PS4 Assistant - Prova de envio'
     home=Path.home()
@@ -82,7 +82,7 @@ def main():
     draw.rectangle((70,125,442,155),fill='#72a7ff');draw.rectangle((70,215,350,245),fill='#72a7ff');draw.rectangle((70,305,260,335),fill='#72a7ff')
     icon.save(system/'icon0.png')
     sfo=system/'param.sfo';run([pkgtool,'sfo_new',sfo],env=env)
-    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.16'),'ATTRIBUTE':('Integer',4,attribute),'CATEGORY':('Utf8',4,category),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.16')}
+    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.17'),'ATTRIBUTE':('Integer',4,attribute),'CATEGORY':('Utf8',4,category),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.17')}
     for key,(kind,size,value) in entries.items():run([pkgtool,'sfo_setentry',sfo,key,'--type',kind,'--maxsize',size,'--value',value],env=env)
     about=system/'about';about.mkdir(exist_ok=True)
     (about/'NOTICE.txt').write_text('Diagnostic homebrew built with OpenOrbis v0.5.4. Source and test status: ps4-package-assistant/receiver. cJSON v1.7.19 MIT license included. Not an official Sony application.\n')

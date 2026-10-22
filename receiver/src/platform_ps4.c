@@ -57,7 +57,7 @@ static int installer_modules(char *error,size_t size){
 }
 
 void platform_trace(const char *stage,int code){
-    char line[384];snprintf(line,sizeof(line),"[PKGA 0.16] %s code=%08X\n",stage,(unsigned)code);
+    char line[384];snprintf(line,sizeof(line),"[PKGA 0.17] %s code=%08X\n",stage,(unsigned)code);
     sceKernelDebugOutText(0,line);
 }
 int platform_init(char ip[16],char *error,size_t size){
@@ -114,6 +114,10 @@ int net_write(int fd,const void *data,size_t size){size_t offset=0;while(offset<
 void net_close(int fd){sceNetSocketClose(fd);}
 static int video,active;static int64_t frame;static void *buffers[2];
 int screen_open(uint32_t **pixels,int w,int h){
+    platform_trace("video module load",0);
+    int video_module=(int)sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_VIDEO_OUT);
+    platform_trace("video module returned",video_module);
+    if(video_module)return video_module;
     video=sceVideoOutOpen(ORBIS_VIDEO_USER_MAIN,ORBIS_VIDEO_OUT_BUS_MAIN,0,NULL);if(video<0)return video;
     off_t offset;size_t bytes=16*1024*1024;void *memory=NULL;
     int code=sceKernelAllocateDirectMemory(0,sceKernelGetDirectMemorySize(),bytes,0x200000,3,&offset);if(code)return code;
