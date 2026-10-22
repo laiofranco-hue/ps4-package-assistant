@@ -158,3 +158,16 @@ This establishes the basic receive/install/progress/display path on this console
 Large packages, multiple queued transfers, sustained speed accuracy and long-run
 stability remain unverified. Use the 0.17 receiver and the probe with bundled
 OpenOrbis runtime modules; earlier failed builds are historical evidence only.
+
+## Single larger-package transfer validated
+
+Later on 2026-10-22, the operator supplied a complete base PKG of
+4,150,984,704 bytes. Receiver 0.1.7 was ready and reported its title absent before
+the test. It registered task365 and completed the full byte count with error0,
+preparation/copy100%, and the title existence check changed to true. Successive
+20-second counter samples measured 9.97–13.28 decimal MB/s over approximately
+321 seconds of recorded sampling. No claim is made that this identifies the
+network bottleneck or validates the accuracy of every instantaneous screen sample.
+The file server was stopped after completion. Game launch remains a separate
+operator check. Multiple queued packages, transfers over 4 GiB and restart
+recovery are still unverified on hardware.
