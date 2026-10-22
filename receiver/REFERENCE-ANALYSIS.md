@@ -90,3 +90,11 @@ and keeps failures explicit. It also formats kernel trace messages before
 calling DebugOutText: the collected 0.13 log contained literal format placeholders.
 No probe was sent while health reported false. Runtime readiness and transfer
 still require a new hardware test.
+
+The old RPI refused the 0.14 replacement with `0x80990015`. The console log
+identified it as `SCE_BGFT_ERROR_SAME_APPLICATION_ALREADY_INSTALLED`, not an
+incomplete transfer. To preserve the installed receiver, `--alternate-receiver`
+builds a distinct `PKGA00003` named `PS4 Package Assistant - Teste 0.14`.
+That title was absent before sending; task 355 completed without error and a
+read-only hash of its installed package matched the generated package.
+Its launch/readiness remains pending. Neither existing receiver was removed.

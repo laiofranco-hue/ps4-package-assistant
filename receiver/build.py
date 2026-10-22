@@ -33,9 +33,13 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--sdk',required=True,type=Path)
     parser.add_argument('--output',type=Path,default=Path.home()/'.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/receiver/ps4')
+    parser.add_argument('--alternate-receiver',action='store_true',help='Build 0.14 as PKGA00003 to preserve an installed receiver')
     parser.add_argument('--probe',action='store_true',help='Build a separate harmless install/launch test package')
     args=parser.parse_args();sdk=args.sdk.resolve(strict=True);out=args.output.resolve()
     content=CONTENT;title_id='PKGA00001';title='PS4 Package Assistant - Teste'
+    if args.alternate_receiver:
+        if args.probe:raise ValueError('Choose receiver or probe, not both.')
+        out=out/'alternate';content='IV0001-PKGA00003_00-PACKAGETEST00014';title_id='PKGA00003';title='PS4 Package Assistant - Teste 0.14'
     if args.probe:
         out=out/'probe';content='IV0001-PKGA00002_00-TRANSFERTEST0001';title_id='PKGA00002';title='PS4 Assistant - Prova de envio'
     home=Path.home()
