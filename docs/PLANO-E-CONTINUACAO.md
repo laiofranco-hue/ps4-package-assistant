@@ -108,3 +108,8 @@ Na etapa de cópia da coleção, o app de Mac e o DMG não foram alterados: as f
 Decisão confirmada: integrar ao app o fluxo de biblioteca SNES já validado no console, mantendo o visual atual. Implementados abertura de coleção preparada e persistência, pesquisa/capas/filtro/paginação, Finder, preparação explícita de ISO com ROMS e sincronização manual por FTP com pSNES fechado, backups e verificação de hashes. O app não instala automaticamente o emulador nem gera PKGs individuais de SNES.
 
 Validação: 25 testes JavaScript em série, 14 testes Python, preparo real de uma ISO de teste e inspeção da interface com 1.046 entradas. Nova sincronização da coleção real pelo botão não foi executada nesta etapa; a prova anterior no console permanece confirmada. Polimento visual, PS1 e outros emuladores continuam como propostas futuras, sem promessa de compatibilidade. Próximo teste de uso: abrir a seção Super Nintendo no app instalado; uma próxima sincronização deve terminar com conferência de lista/capas/save no console.
+
+
+### Caminho para iniciantes e limpeza — 21/10/2026
+
+A pedido do usuário, o fluxo SNES foi simplificado em três etapas visíveis. Escolher ISO inicia somente o preparo local, com validação da estrutura antes dos downloads; envio exige IP informado na própria seção e confirmação de pSNES fechado/FTP ativo. Instruções de primeiro uso deixam explícitos o emulador e os requisitos. Texto de encerramento explica independência do PS4 e remoção das cópias locais depois do teste. Escolha cancelada não inicia tarefa; não se promete suporte a qualquer ISO. Validação: 26 testes Node, 15 Python, importação completa com ISO fictícia e tela vazia de primeiro uso.

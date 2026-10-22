@@ -14,7 +14,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from ftplib import error_perm
 
-from snes_library import build, write_gamelist
+from snes_library import build, write_gamelist, iso_entries
 from snes_art import add_art
 from snes_upload import connect, upload_one, remote_digest
 
@@ -283,6 +283,9 @@ def main(spec):
         except BlockingIOError:
             raise ValueError('Outra tarefa SNES continua ativa. Aguarde sua conclusão.')
         if spec['kind'] == 'prepare':
+            print('Verificando se a ISO contém jogos SNES…',flush=True)
+            iso_entries(spec['iso'])
+            check()
             try:
                 import PIL
             except ImportError:

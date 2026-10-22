@@ -68,9 +68,9 @@ Após reabrir o pSNES, o usuário confirmou: lista, capas e estado salvo de Mari
 
 A seção **Super Nintendo · biblioteca com capas** abre uma pasta preparada que contenha `manifest.json` e `roms/`. A seleção fica lembrada após reiniciar o app. Pesquise pelo título ou nome do arquivo, filtre artes/cartões neutros e use Mostrar mais jogos. A pasta pode ser revelada no Finder. Só as origens escolhidas são abertas; não há busca pelo computador inteiro.
 
-Em **Preparar outra ISO com jogos SNES**, escolha uma ISO com pasta `ROMS/` e clique em **Preparar jogos e capas**. Os componentes anteriores fazem cópias locais com extensões minúsculas, identificam as ROMs e preparam as imagens. Não baixa jogos, não envia ao console e não gera PKG por jogo. Requer Python 3 e Pillow; `SNES_PYTHON` permite escolher um interpretador com Pillow. A primeira preparação baixa o DAT No-Intro e o índice de artes da revisão fixada; o manifesto registra o hash do DAT e a revisão das imagens. As coleções ficam em uma subpasta exclusiva da área local `ps4-package-assistant-local/snes-app/collections/`, fora do iCloud.
+Na etapa **1. Escolha a ISO**, clique em **Escolher ISO e preparar** e selecione uma ISO com pasta `ROMS/`. A preparação começa automaticamente após a escolha; cancelar o seletor não inicia tarefa alguma. A estrutura da ISO é conferida antes de baixar os índices. Os componentes anteriores fazem cópias locais com extensões minúsculas, identificam as ROMs e preparam as imagens. Não baixa jogos, não envia ao console e não gera PKG por jogo. Requer Python 3 e Pillow; `SNES_PYTHON` permite escolher um interpretador com Pillow. A primeira preparação baixa o DAT No-Intro e o índice de artes da revisão fixada; o manifesto registra o hash do DAT e a revisão das imagens. As coleções ficam em uma subpasta exclusiva da área local `ps4-package-assistant-local/snes-app/collections/`, fora do iCloud.
 
-Para **Sincronizar com pSNES**, informe o IP do console na seção de conexão, ative o FTP anônimo do GoldHEN na porta 2121, feche completamente o pSNES e marque a confirmação. O emulador precisa já estar instalado e ter sido aberto/fechado uma vez. O app não instala o pSNES automaticamente. O Remote Package Installer continua reservado ao envio de PKGs.
+Na etapa **3. Envie ao PS4**, informe o IP do console no campo da própria seção SNES, ative o FTP anônimo do GoldHEN na porta 2121, feche completamente o pSNES e marque a confirmação. Clique em **Enviar jogos e capas ao PS4**. O emulador precisa já estar instalado e ter sido aberto/fechado uma vez. O app não instala o pSNES automaticamente. O Remote Package Installer continua reservado ao envio de PKGs.
 
 A sincronização compara os hashes locais e remotos, rejeita ROMs diferentes no mesmo destino e conflitos de nomes-base de saves, faz backup dos saves/lista/configuração e só publica metadados depois da cópia. Preserva entradas desconhecidas da lista. Mantém preferências de emulação; cadastra a pasta SNES e exibe os títulos da lista. A publicação mantém cópias anteriores e tenta restaurar os metadados se ocorrer falha; uma desconexão também pode impedir a restauração, devendo-se revisar o backup antes de continuar. Backups e recibos ficam na pasta de trabalho local; nenhuma biblioteca é automaticamente reenviada após reiniciar.
 
@@ -82,3 +82,14 @@ Cancelar aguarda o arquivo ou fase atual terminar. A pequena transação final d
 - Preparação completa com uma ISO de teste criada localmente: extração real, extensão minúscula, identificação, PNG neutro e seleção persistida; ISO de origem preservada.
 - Interface conferida com a coleção existente de 1.046 entradas: capas, pesquisa, filtro de 201 cartões neutros, paginação, confirmação antes do envio e largura de 375 px sem transbordamento.
 - Esta integração não reenviou a coleção real ao PS4. A entrega anterior no console e a confirmação do usuário permanecem válidas; o novo botão de sincronização foi verificado com FTP simulado.
+
+
+### Primeiro uso e limpeza local
+
+O caminho principal agora fica visível em três etapas: **escolher a ISO → conferir jogos e capas → enviar ao PS4**. Abertura de coleção já preparada e repetição de preparo ficam em opções secundárias. O progresso e os erros aparecem junto ao botão inicial. O IP do PS4 é solicitado na própria seção SNES, sem um endereço de outro usuário preenchido por padrão.
+
+Não é um conversor de qualquer ISO. Precisa de uma coletânea com pasta `ROMS/` na raiz; o app explica quando a estrutura não é reconhecida. pSNES instalado/inicializado e FTP do GoldHEN ativo no PS4 continuam sendo requisitos, descritos junto ao envio. Não há instalação automática de emulador nem envio automático após escolher a ISO.
+
+Depois de conferir os jogos/capas/save no PS4, a ISO e a pasta preparada do Mac podem ser removidas pelo Finder sem apagar nada do console. A biblioteca exibida no Mac corresponde à cópia local, não a uma consulta da lista do PS4. Sem esses arquivos, ela fica vazia; um envio futuro exigirá preparar uma coleção novamente. Backups de saves podem ser mantidos separadamente. Mover arquivos para a Lixeira só libera espaço após esvaziá-la.
+
+Validação deste refinamento: 26 testes JavaScript e 15 Python; preparo completo de uma ISO fictícia pelo caminho de importação; primeira tela e tela com coleção conferidas em desktop e 375 px, sem envios ao console.

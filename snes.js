@@ -15,8 +15,8 @@ class SnesLibrary {
     this.folder = ''; this.iso = ''; this.items = []; this.log = []; this.status = 'idle'; this.error = ''; this.running = false; this.kind = '';
     try {
       const saved = JSON.parse(fs.readFileSync(path.join(this.dataDir, 'selection.json')));
-      if (saved.folder) this.load(saved.folder);
       this.iso = saved.iso || '';
+      if (saved.folder) this.load(saved.folder);
     } catch (e) { if (e.code !== 'ENOENT') this.error = 'A biblioteca salva está indisponível. Reconecte o disco e abra a pasta novamente.'; }
     try {
       const old = JSON.parse(fs.readFileSync(path.join(this.dataDir, 'job.json')));
@@ -70,6 +70,11 @@ class SnesLibrary {
       this.error = ''; this.persist();
     } finally { this.running = false; }
     return this.state();
+  }
+  async importIso() {
+    const selected = await this.choose('iso');
+    if (selected.cancelled) return {...this.state(),cancelled:true};
+    return this.start('prepare');
   }
   start(kind, {ps4Ip, closed} = {}) {
     this.assertIdle();

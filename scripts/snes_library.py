@@ -101,17 +101,7 @@ def write_gamelist(folder, items):
     ET.ElementTree(root).write(Path(folder) / 'gamelist.xml', encoding='utf-8', xml_declaration=True)
 
 
-def build(iso, dat, output_root, progress=print, preserve_names=()):
-    iso = Path(iso).expanduser().resolve(strict=True)
-    root = Path(output_root).expanduser().resolve()
-    home = Path.home()
-    forbidden = [home/'Desktop', home/'Documents', home/'Library/Mobile Documents', home/'Library/CloudStorage']
-    if any(root == p or p in root.parents for p in forbidden):
-        raise ValueError('Escolha uma pasta local fora da nuvem, Desktop e Documents.')
-    index = dat_index(Path(dat).read_text(encoding='utf-8'))
-    if not index:
-        raise ValueError('Banco de identificação vazio ou inválido.')
-    before = iso.stat()
+def iso_entries(iso):
     listing = subprocess.check_output(['/usr/bin/bsdtar', '-tf', str(iso)], text=True).splitlines()
     selected = []
     names = set()
@@ -125,8 +115,26 @@ def build(iso, dat, output_root, progress=print, preserve_names=()):
         if name.casefold() in names:
             raise ValueError('Nomes de jogos em conflito na ISO.')
         names.add(name.casefold()); selected.append((entry, name))
-    if not selected or len(selected) > 10000:
-        raise ValueError('Quantidade de ROMs inválida.')
+    if not selected:
+        raise ValueError('Esta ISO não contém jogos SNES na pasta ROMS da raiz. Escolha uma coletânea SNES compatível; ISOs de jogos PS1/PS2 não servem neste fluxo.')
+    if len(selected) > 10000:
+        raise ValueError('A ISO ultrapassa o limite de 10.000 arquivos de jogos.')
+    return selected
+
+
+def build(iso, dat, output_root, progress=print, preserve_names=()):
+    iso = Path(iso).expanduser().resolve(strict=True)
+    root = Path(output_root).expanduser().resolve()
+    home = Path.home()
+    forbidden = [home/'Desktop', home/'Documents', home/'Library/Mobile Documents', home/'Library/CloudStorage']
+    if any(root == p or p in root.parents for p in forbidden):
+        raise ValueError('Escolha uma pasta local fora da nuvem, Desktop e Documents.')
+    index = dat_index(Path(dat).read_text(encoding='utf-8'))
+    if not index:
+        raise ValueError('Banco de identificação vazio ou inválido.')
+    before = iso.stat()
+    selected = iso_entries(iso)
+    names = {name.casefold() for _,name in selected}
     root.mkdir(parents=True, exist_ok=True)
     destination = Path(tempfile.mkdtemp(prefix='snes-biblioteca-', dir=root))
     roms = destination/'roms'; roms.mkdir()

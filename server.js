@@ -160,6 +160,7 @@ const ui = http.createServer(async (req, res) => {
       const body = await readBody(req);
       if (url.pathname === '/api/snes/folder') return json(res,200,await snes.choose('folder'));
       if (url.pathname === '/api/snes/iso') return json(res,200,await snes.choose('iso'));
+      if (url.pathname === '/api/snes/import') return json(res,202,await snes.importIso());
       if (url.pathname === '/api/snes/prepare') return json(res,202,snes.start('prepare'));
       if (url.pathname === '/api/snes/sync') return json(res,202,snes.start('sync',body));
       if (url.pathname === '/api/snes/cancel') return json(res,200,snes.cancel());

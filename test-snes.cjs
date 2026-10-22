@@ -34,6 +34,18 @@ test('SNES selection persists, never starts transfer, validates save names and c
   assert.equal(new SnesLibrary({dataDir}).status,'attention');
 });
 
+test('guided ISO import starts preparation once and cancelling the picker never starts a task',async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'snes-guided-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const iso=path.join(root,'collection.iso');fs.writeFileSync(iso,'fixture');
+  const snes=new SnesLibrary({dataDir:path.join(root,'data'),picker:async()=>iso});
+  const started=[];
+  snes.start=kind=>{started.push(kind);return snes.state();};
+  await snes.importIso();assert.deepEqual(started,['prepare']);assert.equal(snes.iso,fs.realpathSync(iso));
+  snes.picker=async()=>{throw new Error('User canceled -128');};
+  const cancelled=await snes.importIso();assert.equal(cancelled.cancelled,true);assert.equal(cancelled.running,false);
+  assert.deepEqual(started,['prepare']);assert.equal(snes.running,false);
+});
+
 test('SNES API loads collection and cover, rejects cross-origin sends and reports worker preflight failure without contacting console',async t=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'snes-api-'));
   const folder=fixture(root),dataDir=path.join(root,'data');fs.mkdirSync(dataDir);

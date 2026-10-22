@@ -6,7 +6,8 @@ import posixpath
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
-from snes_app import synchronize, merge_xml, update_config, validate_library
+from snes_app import synchronize, merge_xml, update_config, validate_library, main
+from unittest.mock import patch
 
 
 class FTP:
@@ -50,6 +51,13 @@ class FTP:
 
 
 class AppTests(unittest.TestCase):
+    def test_incompatible_iso_fails_before_metadata_or_cover_download(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch('snes_app.signal.signal'),patch('snes_library.subprocess.check_output',return_value='SYSTEM.CNF\nGAME.BIN'),patch('snes_app.download') as download:
+                with self.assertRaisesRegex(ValueError,'não contém jogos SNES'):
+                    main({'work':tmp,'kind':'prepare','iso':str(Path(tmp)/'wrong.iso'),'id':'test'})
+                download.assert_not_called()
+
     def fixture(self,tmp):
         folder=Path(tmp)/'collection';(folder/'roms/media/mixrbv2').mkdir(parents=True)
         rom=b'fictional-rom';cover=b'fictional-cover'

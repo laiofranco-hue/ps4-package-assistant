@@ -125,7 +125,7 @@ O [procedimento de biblioteca SNES com capas](docs/BIBLIOTECA-SNES-CAPAS.md) des
 
 ### Biblioteca SNES no app
 
-Use **Super Nintendo** para abrir coleções preparadas, pesquisar jogos com capas, preparar outra ISO com pasta ROMS e sincronizar manualmente com o pSNES via FTP do GoldHEN. Requer pSNES já instalado/inicializado, Python 3 e Pillow para preparar capas. As saídas e backups ficam locais, fora do iCloud. Não baixa ROMs nem cria um PKG por jogo. Veja [o procedimento e os limites](docs/BIBLIOTECA-SNES-CAPAS.md#uso-no-app).
+Em **Super Nintendo**, clique em **Escolher ISO e preparar**. O app prepara automaticamente a ISO com pasta ROMS; depois confira os jogos/capas e envie ao pSNES por FTP do GoldHEN. Coleções preparadas continuam acessíveis em uma opção secundária. Requer pSNES já instalado/inicializado, Python 3 e Pillow para preparar capas. As saídas e backups ficam locais, fora do iCloud. Não baixa ROMs nem cria um PKG por jogo. Veja [o procedimento e os limites](docs/BIBLIOTECA-SNES-CAPAS.md#uso-no-app).
 
 Execute os testes de API em série, pois os simuladores de PS4 compartilham a porta 12800:
 

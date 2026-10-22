@@ -1,7 +1,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   let data = {items:[]}, shown = 48, timer, revision = '';
-  const controls = ['snes-folder','snes-iso','snes-prepare','snes-sync','snes-reveal'];
+  const controls = ['snes-folder','snes-import','snes-prepare','snes-sync','snes-reveal'];
   function message(text, error=false) {
     $('snes-message').textContent=text;
     $('snes-message').classList.toggle('library-error',error);
@@ -23,7 +23,7 @@
     const items=data.items.filter(item=>(!query || (item.title+' '+item.name).toLocaleLowerCase('pt-BR').includes(query)) && (!filter || (filter==='neutral' ? item.art==='neutral' : item.art!=='neutral'))).sort((a,b)=>a.title.localeCompare(b.title,'pt-BR'));
     const list=$('snes-items');list.replaceChildren();
     $('snes-count').textContent=`${items.length} de ${data.items.length} entradas`;
-    if(!items.length)list.append(node('li',data.items.length?'Nenhum jogo corresponde aos filtros.':'Abra uma biblioteca preparada ou selecione uma ISO com jogos SNES.','library-empty'));
+    if(!items.length)list.append(node('li',data.items.length?'Nenhum jogo corresponde aos filtros.':'Comece em Escolher ISO e preparar, acima. Os jogos extraídos aparecerão aqui.','library-empty'));
     for(const item of items.slice(0,shown)) {
       const row=node('li',null,'snes-game');
       if(item.cover) {
@@ -39,14 +39,14 @@
     data=value;
     controls.forEach(id=>$(id).disabled=Boolean(data.running));
     $('snes-prepare').disabled ||= !data.iso;
-    $('snes-sync').disabled ||= !data.folder || !$('snes-closed').checked;
+    $('snes-sync').disabled ||= !data.folder || !$('snes-closed').checked || !$('snes-ps4').value.trim();
     $('snes-reveal').disabled ||= !data.folder;
     $('snes-closed').disabled=Boolean(data.running);
     $('snes-cancel').hidden=!data.running;
     $('snes-cancel').disabled=data.status==='cancelling';
-    $('snes-path').textContent=data.folder || 'Nenhuma biblioteca aberta.';
+    $('snes-path').textContent=data.folder || 'Nenhuma biblioteca preparada ainda.';
     $('snes-selected-iso').textContent=data.iso || 'Nenhuma ISO selecionada.';
-    const labels={idle:'A biblioteca fica no Mac. O envio ao PS4 só começa ao clicar em Sincronizar com pSNES.',preparing:'Preparando jogos e capas… Mantenha o app aberto.',syncing:'Sincronizando com o pSNES… Mantenha o Mac e o PS4 ligados.',success:data.kind==='prepare'?'Biblioteca preparada no Mac. Confira os jogos abaixo antes de sincronizar.':'Sincronização concluída. Reabra o pSNES e confira os jogos e saves.',cancelling:'Cancelamento solicitado. Aguarde a operação atual terminar; a atualização final da lista precisa concluir ou restaurar o backup.',cancelled:'Tarefa cancelada. Arquivos e backups preservados.',attention:'Confira a tarefa anterior antes de continuar.'};
+    const labels={idle:'A biblioteca fica no Mac. O envio ao PS4 só começa ao clicar em Enviar jogos e capas ao PS4.',preparing:'Preparando jogos e capas automaticamente… Ao concluir, confira a etapa 2. Mantenha o app aberto.',syncing:'Sincronizando com o pSNES… Mantenha o Mac e o PS4 ligados.',success:data.kind==='prepare'?'Biblioteca preparada no Mac. Confira os jogos abaixo antes de sincronizar.':'Sincronização concluída. Reabra o pSNES e confira os jogos e saves.',cancelling:'Cancelamento solicitado. Aguarde a operação atual terminar; a atualização final da lista precisa concluir ou restaurar o backup.',cancelled:'Tarefa cancelada. Arquivos e backups preservados.',attention:'Confira a tarefa anterior antes de continuar.'};
     message(data.error || labels[data.status] || '',Boolean(data.error));
     $('snes-log').textContent=(data.log||[]).join('\n');
     $('snes-log-panel').hidden=!(data.log||[]).length;
@@ -62,17 +62,18 @@
       render(await response.json());
     } catch(error){message(error.message+' Reabra o app se a conexão não voltar.',true);timer=setTimeout(refresh,3000);}
   }
-  for(const [id,route] of [['snes-folder','/folder'],['snes-iso','/iso'],['snes-prepare','/prepare'],['snes-reveal','/reveal'],['snes-cancel','/cancel'],['snes-sync','/sync']]) {
+  for(const [id,route] of [['snes-folder','/folder'],['snes-import','/import'],['snes-prepare','/prepare'],['snes-reveal','/reveal'],['snes-cancel','/cancel'],['snes-sync','/sync']]) {
     $(id).onclick=async()=>{
       controls.forEach(key=>$(key).disabled=true);
       try {
-        const value=await request(route,route==='/sync'?{ps4Ip:$('ps4').value.trim(),closed:$('snes-closed').checked}:{});
+        const value=await request(route,route==='/sync'?{ps4Ip:$('snes-ps4').value.trim(),closed:$('snes-closed').checked}:{});
         if(route==='/sync')$('snes-closed').checked=false;
         render(value);
       } catch(error){await refresh();message(error.message,true);}
     };
   }
-  $('snes-closed').onchange=()=>{$('snes-sync').disabled=data.running||!data.folder||!$('snes-closed').checked;};
+  $('snes-closed').onchange=()=>{$('snes-sync').disabled=data.running||!data.folder||!$('snes-closed').checked||!$('snes-ps4').value.trim();};
+  $('snes-ps4').oninput=$('snes-closed').onchange;
   $('snes-search').oninput=()=>{shown=48;renderItems();};
   $('snes-art').onchange=()=>{shown=48;renderItems();};
   $('snes-more').onclick=()=>{shown+=48;renderItems();};
