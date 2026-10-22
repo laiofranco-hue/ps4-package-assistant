@@ -133,3 +133,8 @@ Execute os testes de API em série, pois os simuladores de PS4 compartilham a po
 node --test --test-concurrency=1 test-*.cjs
 python3 -m unittest discover -s scripts -p 'test*.py' -v
 ```
+
+
+### Receptor próprio no PS4 — experimental
+
+A primeira prova nativa fica em [receiver/README.md](receiver/README.md). Ela mostra IP, tarefas recebidas, transferência e MB/s em uma tela simples. O instalador anterior é preservado; a fila do Mac continua controlando a ordem. PKGs de teste e SDK ficam somente na área local. Compilação e integridade foram verificadas, mas execução/instalação no PS4 ainda dependem do teste no aparelho. O protótipo aceita pacotes base completos; não substitui o instalador anterior para patches/DLC.

@@ -72,3 +72,10 @@ test('lost install response is uncertain and corrupt history is preserved read-o
   fs.writeFileSync(f.q.file, 'bad json'); const q = new TaskQueue({ dataDir: f.q.dir });
   assert.equal(q.readOnly, true); assert.throws(() => q.start(), /preservado/); assert.equal(fs.readFileSync(f.q.file, 'utf8'), 'bad json');
 });
+test('registered task with a start warning preserves its ID and rechecks without reinstalling',async t=>{
+  let installs=0;
+  const f=fixture(t,{install:async()=>{installs++;return {httpStatus:200,result:{status:'attention',task_id:42,error:'Registrada; início não confirmado.'}};},progress:async()=>({status:'success',length_total:100,transferred_total:100,error:0})});
+  await f.q.add(f.send);f.q.start();await f.q.done;
+  assert.equal(f.q.jobs[0].status,'attention');assert.equal(f.q.jobs[0].taskId,42);assert.match(f.q.jobs[0].error,/início/);
+  await f.q.recheck(f.q.jobs[0].id);await f.q.done;assert.equal(f.q.jobs[0].status,'success');assert.equal(installs,1);
+});

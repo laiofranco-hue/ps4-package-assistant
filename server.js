@@ -4,6 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFile } = require('node:child_process');
+const { packageMetadata } = require('./pkg-metadata');
 
 const UI_PORT = Number(process.env.UI_PORT || 4173);
 const FILE_PORT = Number(process.env.FILE_PORT || 8081);
@@ -77,14 +78,16 @@ async function installFile(file, { ps4Ip, macIp }, remember = () => {}) {
   if (!stat.isFile()) throw new Error('O caminho selecionado não é um arquivo.');
   const validIPv4 = value => /^\d{1,3}(\.\d{1,3}){3}$/.test(value || '') && value.split('.').every(octet => Number(octet) <= 255);
   if (!validIPv4(ps4Ip) || !validIPv4(macIp)) throw new Error('Informe endereços IPv4 válidos para o PS4 e o Mac.');
-  const transfer = { token: newToken(), file: file, ps4Ip, streams: new Set() };
+  const transfer = { token: newToken(), file: file, ps4Ip, macIp, streams: new Set() };
   remember(transfer.token);
   transfer.original = { size: stat.size, mtimeMs: stat.mtimeMs, ctimeMs: stat.ctimeMs };
   transfers.push(transfer);
   const packageUrl = `http://${macIp}:${FILE_PORT}/${transfer.token}/${encodeURIComponent(path.basename(transfer.file))}`;
+  const metadata = await packageMetadata(file,stat,packageUrl,`http://${macIp}:${FILE_PORT}/${transfer.token}/.assistant/manifest.json`);
+  transfer.manifest=metadata?.manifest;
   const response = await fetch(`http://${ps4Ip}:12800/api/install`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: 'direct', packages: [packageUrl] }), signal: AbortSignal.timeout(30000)
+    body: JSON.stringify({ type: 'direct', packages: [packageUrl], ...(metadata?{bridge:metadata.bridge}:{}) }), signal: AbortSignal.timeout(30000)
   });
   const text = await response.text();
   let result; try { result = JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token))); } catch { result = { raw: text }; }
@@ -131,7 +134,7 @@ for (const job of queue.jobs) {
   if (job.kind !== 'send' || !['attention', 'success'].includes(job.status) || !/^[a-f0-9]{64}$/.test(job.token || '')) continue;
   try {
     const stat = fs.statSync(job.file);
-    if (stat.isFile() && ['size', 'mtimeMs', 'ctimeMs'].every(k => stat[k] === job.original[k])) transfers.push({ token: job.token, file: job.file, ps4Ip: job.options.ps4Ip, original: job.original, streams: new Set() });
+    if (stat.isFile() && ['size', 'mtimeMs', 'ctimeMs'].every(k => stat[k] === job.original[k])) transfers.push({ token: job.token, file: job.file, ps4Ip: job.options.ps4Ip, macIp:job.options.macIp, original: job.original, streams: new Set() });
   } catch {}
 }
 
@@ -307,10 +310,23 @@ const files = http.createServer(async (req, res) => {
   const transfer = findTransfer(suppliedToken);
   if (!transfer) { logDenied(peer, 'token inválido ou pacote já interrompido'); res.writeHead(403); return res.end('Package access is limited to the selected PS4 request'); }
   if (peer !== transfer.ps4Ip) { logDenied(peer, `IP diferente do PS4 informado (${transfer.ps4Ip})`); res.writeHead(403); return res.end('Package access is limited to the selected PS4 request'); }
-  if (requestedPath !== `/${path.basename(transfer.file)}`) { logDenied(peer, 'nome do arquivo não confere'); res.writeHead(404); return res.end('Package not found'); }
+  const manifestRequest=requestedPath==='/.assistant/manifest.json';
+  if (!manifestRequest && requestedPath !== `/${path.basename(transfer.file)}`) { logDenied(peer, 'nome do arquivo não confere'); res.writeHead(404); return res.end('Package not found'); }
   let stat;
   try { stat = await fs.promises.stat(transfer.file); } catch { res.writeHead(404); return res.end('Package unavailable'); }
   if (transfer.original && !['size', 'mtimeMs', 'ctimeMs'].every(k => stat[k] === transfer.original[k])) { res.writeHead(409); return res.end('Package changed after selection'); }
+  if(manifestRequest){
+    try {
+      if(!transfer.manifest){
+        const base=`http://${transfer.macIp}:${FILE_PORT}/${transfer.token}`;
+        transfer.manifest=(await packageMetadata(transfer.file,stat,base+'/'+encodeURIComponent(path.basename(transfer.file)),base+'/.assistant/manifest.json'))?.manifest;
+      }
+      if(!transfer.manifest){res.writeHead(404);return res.end('Manifest unavailable');}
+      const data=Buffer.from(JSON.stringify(transfer.manifest));
+      res.writeHead(200,{'Content-Type':'application/json','Content-Length':data.length,'Cache-Control':'no-store'});
+      return res.end(req.method==='HEAD'?undefined:data);
+    } catch {res.writeHead(500);return res.end('Manifest unavailable');}
+  }
   logFileRequest(req, res, peer);
   const range = req.headers.range;
   const headers = { 'Accept-Ranges': 'bytes', 'Content-Type': 'application/octet-stream', 'Access-Control-Allow-Origin': '*' };

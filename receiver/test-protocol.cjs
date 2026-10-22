@@ -1,0 +1,23 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const os=require('node:os');const {spawn,execFileSync}=require('node:child_process');const net=require('node:net');
+test('compiled receiver rejects malformed/foreign requests, reports 64-bit progress and installation errors',async t=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'native-receiver-'));const binary=path.join(temp,'receiver');
+ execFileSync('clang',['-std=c11','-Wall','-Wextra','-Werror','-DCJSON_NESTING_LIMIT=16','-pthread','src/main.c','src/model.c','src/render.c','src/protocol.c','src/platform_host.c','vendor/cJSON.c','-o',binary],{cwd:__dirname});
+ execFileSync('clang',['-std=c11','-Wall','-Werror','test-model.c','src/model.c','-o',path.join(temp,'test-model')],{cwd:__dirname});execFileSync(path.join(temp,'test-model'));
+ const child=spawn(binary,['14185']);t.after(async()=>{const end=new Promise(r=>child.once('exit',r));child.kill();await end;fs.rmSync(temp,{recursive:true,force:true});});
+ await new Promise((resolve,reject)=>{child.stdout.on('data',()=>resolve());child.once('error',reject);});
+ const post=async(route,body,headers={})=>{const r=await fetch('http://127.0.0.1:14185'+route,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:typeof body==='string'?body:JSON.stringify(body)});return {status:r.status,data:await r.json()};};
+ assert.equal((await post('/api/health',{})).data.receiver,'ps4-package-assistant');
+ const fragmented=await new Promise((resolve,reject)=>{const socket=net.connect(14185,'127.0.0.1');let output='';socket.on('connect',()=>setTimeout(()=>{socket.write('POST /api/health HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{');setTimeout(()=>socket.write('}'),30);},30));socket.on('data',d=>output+=d);socket.on('end',()=>resolve(output));socket.on('error',reject);});assert.match(fragmented,/HTTP\/1.1 200/);
+ assert.equal((await post('/api/health',{}, {Origin:'https://example.invalid'})).status,400);
+ assert.equal((await post('/api/install','{')).status,400);
+ assert.equal((await post('/api/install',{type:'direct',packages:['http://host/game.pkg']})).status,400);
+ const body={type:'direct',packages:['http://127.0.0.1/game.pkg'],bridge:{manifest_url:'http://127.0.0.1/manifest.json',content_id:'IV0001-TEST00001_00-0123456789ABCDEF',title:'Fictional 6 GB package',package_type:'PS4GD',size:6000000000}};
+ const installed=await post('/api/install',body);assert.equal(installed.data.status,'success');const id=installed.data.task_id;
+ const progress=await post('/api/get_task_progress',{task_id:id});assert.equal(progress.data.length_total,6000000000);assert.equal(progress.data.error,0);assert.ok(progress.data.transferred_total<6000000000);
+ body.bridge.content_id='IV0001-FAIL00001_00-0123456789ABCDEF';const failed=await post('/api/install',body);assert.equal(failed.data.status,'fail');assert.equal(failed.data.error_code,'0x80990015');
+ body.bridge.content_id='IV0001-STRT00001_00-0123456789ABCDEF';const uncertain=await post('/api/install',body);assert.equal(uncertain.data.status,'attention');assert.ok(uncertain.data.task_id>0);
+ body.bridge.content_id='invalid';assert.equal((await post('/api/install',body)).status,400);
+ assert.equal((await post('/api/get_task_progress',{task_id:-1})).status,400);
+ assert.equal((await post('/api/health','{"a":'.repeat(20)+'0'+'}'.repeat(20))).status,400);
+ const raw=await new Promise((resolve,reject)=>{const socket=net.connect(14185,'127.0.0.1');let output='';socket.on('connect',()=>socket.write('POST /api/health HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: 20000\r\n\r\n'));socket.on('data',d=>output+=d);socket.on('end',()=>resolve(output));socket.on('error',reject);});assert.match(raw,/HTTP\/1.1 400/);
+});

@@ -85,8 +85,8 @@ class TaskQueue {
             try { accepted = await this.install(job.file, job.options, token => { job.token = token; this.save(); }); }
             catch (e) { e.uncertain = true; throw e; }
             if (accepted.result?.status === 'fail' || accepted.httpStatus >= 400) throw new Error(accepted.result?.error || 'O PS4 recusou a solicitação.');
-            if (accepted.result?.status !== 'success' || (!Number.isInteger(accepted.result.task_id) || accepted.result.task_id < 0)) { const e = new Error('Resposta sem identificação de tarefa. Confira Downloads no PS4.'); e.uncertain = true; throw e; }
-            job.taskId = accepted.result.task_id; this.save();
+            if (Number.isInteger(accepted.result?.task_id) && accepted.result.task_id >= 0) { job.taskId = accepted.result.task_id; this.save(); }
+            if (accepted.result?.status !== 'success' || job.taskId == null) { const e = new Error(accepted.result?.error || 'Resposta sem identificação de tarefa. Confira Downloads no PS4.'); e.uncertain = true; throw e; }
             await this.monitor(job);
           }
           job.status = 'success'; job.error = '';

@@ -113,3 +113,12 @@ Validação: 25 testes JavaScript em série, 14 testes Python, preparo real de u
 ### Caminho para iniciantes e limpeza — 21/10/2026
 
 A pedido do usuário, o fluxo SNES foi simplificado em três etapas visíveis. Escolher ISO inicia somente o preparo local, com validação da estrutura antes dos downloads; envio exige IP informado na própria seção e confirmação de pSNES fechado/FTP ativo. Instruções de primeiro uso deixam explícitos o emulador e os requisitos. Texto de encerramento explica independência do PS4 e remoção das cópias locais depois do teste. Escolha cancelada não inicia tarefa; não se promete suporte a qualquer ISO. Validação: 26 testes Node, 15 Python, importação completa com ISO fictícia e tela vazia de primeiro uso.
+
+
+## Receptor PS4 próprio: prova básica — 22/10/2026
+
+Pedido confirmado: começar o receptor próprio e validar o básico antes de pensar no layout. Implementação nativa C/OpenOrbis com API de instalação/progresso, tela diagnóstica 1280×720, tarefas recebidas e MB/s calculados por contadores de 64 bits e relógio monotônico. A fila do Mac permanece responsável pelos próximos envios. Carrossel, capas, filas futuras na TV e acabamento ficam fora desta prova.
+
+Cliente Mac acrescenta metadados/manifesto para pacotes base compatíveis, preservando o protocolo do RPI anterior, token aleatório e restrição ao IP. Início incerto com task_id preserva a tarefa para reconsulta sem reinstalar. SDK e artefatos ficam fora do Git/iCloud. [Build e teste no console](../receiver/README.md).
+
+Validação: 29 testes JavaScript, um teste integrado que compila/executa o receptor com adaptador simulado e asserções C de contadores/taxa, geração nativa x86-64/eboot/PKG e 28 verificações de integridade do pacote receptor. Isso não comprova execução no console. O PS4 não respondeu à consulta inicial; pedido de abrir o RPI anterior enviado ao usuário. Próximo passo: confirmar ausência dos Title IDs de teste, instalar o receptor separadamente, fechar completamente o antigo, abrir o novo e testar o pacote de prova próprio. Nenhum jogo existente deve ser reinstalado ou removido como parte dessa validação.
