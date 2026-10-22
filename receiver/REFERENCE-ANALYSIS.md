@@ -98,3 +98,19 @@ builds a distinct `PKGA00003` named `PS4 Package Assistant - Teste 0.14`.
 That title was absent before sending; task 355 completed without error and a
 read-only hash of its installed package matched the generated package.
 Its launch/readiness remains pending. Neither existing receiver was removed.
+
+The operator opened 0.14; health returned `0.1.4`, `ready:false` and the
+operation error changed to `MODULO 80020008`. Kernel traces now show main and
+every module ID/result. AppInstUtil fails both the internal-module load and
+direct load. The loader explicitly records auth rejection `800f0d39` for caller
+`3800000000000011` and module `3900000000000002`. This is a permission failure,
+not the previous missing-path error. No install was attempted by this receiver.
+
+Reading the supplied working SELF's extended info shows authority ID
+`3100000000000002`; ours used the SDK sample's `3800000000000011`. The reference
+SFO also uses `CATEGORY=gde`, `ATTRIBUTE=0x12`; its runtime log identifies it as
+a system mini-app. Receiver build 0.15 tests that observed authority/category
+profile. The harmless probe keeps its ordinary application profile. Reports now
+record these profile fields. This is a testable compatibility hypothesis, not
+proof that all service permissions or BGFT transfers work. The separate 0.15
+test identity is PKGA00004; existing test applications remain intact.

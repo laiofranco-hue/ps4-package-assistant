@@ -57,7 +57,7 @@ static int installer_modules(char *error,size_t size){
 }
 
 void platform_trace(const char *stage,int code){
-    char line[384];snprintf(line,sizeof(line),"[PKGA 0.14] %s code=%08X\n",stage,(unsigned)code);
+    char line[384];snprintf(line,sizeof(line),"[PKGA 0.15] %s code=%08X\n",stage,(unsigned)code);
     sceKernelDebugOutText(0,line);
 }
 int platform_init(char ip[16],char *error,size_t size){
