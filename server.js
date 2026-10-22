@@ -13,6 +13,8 @@ const { Conversion } = require('./conversion');
 const conversion = new Conversion({ onComplete: file => { selectedFile = file; } });
 const { Library } = require('./library');
 const library = new Library({ dataDir: process.env.LIBRARY_DATA_DIR });
+const { SnesLibrary } = require('./snes');
+const snes = new SnesLibrary({ busy: () => queue.active || conversion.running || conversion.preparingCover || queuedConversion.running || manualInstalling || manualConversionRequests > 0 });
 
 function newToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -98,7 +100,7 @@ const { TaskQueue } = require('./queue');
 const queuedConversion = new Conversion({ onComplete: file => { selectedFile = file; conversion.lastOutput = file; } });
 const queue = new TaskQueue({
   dataDir: process.env.QUEUE_DATA_DIR,
-  busy: () => conversion.running || conversion.preparingCover || manualInstalling || manualConversionRequests > 0,
+  busy: () => conversion.running || conversion.preparingCover || manualInstalling || manualConversionRequests > 0 || snes.running,
   install: installFile,
   progress: async (ip, id) => {
     const response = await fetch(`http://${ip}:12800/api/get_task_progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: id }), signal: AbortSignal.timeout(15000) });
@@ -136,13 +138,34 @@ for (const job of queue.jobs) {
 const ui = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'POST' && req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
-  if (req.method === 'GET' && ['/library-ui.js', '/queue-ui.js'].includes(url.pathname)) {
+  if (req.method === 'GET' && ['/library-ui.js', '/queue-ui.js', '/snes-ui.js'].includes(url.pathname)) {
     res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
     return fs.createReadStream(path.join(__dirname, url.pathname.slice(1))).pipe(res);
   }
   if (req.method === 'GET' && url.pathname === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res);
+  }
+  if (url.pathname.startsWith('/api/snes')) {
+    if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
+    try {
+      if (req.method === 'GET' && url.pathname === '/api/snes') return json(res, 200, snes.state());
+      if (req.method === 'GET' && url.pathname === '/api/snes/cover') {
+        const file = snes.cover(url.searchParams.get('id'));
+        res.writeHead(200, { 'Content-Type':'image/png', 'Cache-Control':'no-store' });
+        const stream = fs.createReadStream(file); stream.on('error',()=>res.destroy()); return stream.pipe(res);
+      }
+      if (req.method !== 'POST') return json(res,405,{error:'Método não permitido.'});
+      if (!String(req.headers['content-type']).startsWith('application/json')) return json(res,415,{error:'Use JSON.'});
+      const body = await readBody(req);
+      if (url.pathname === '/api/snes/folder') return json(res,200,await snes.choose('folder'));
+      if (url.pathname === '/api/snes/iso') return json(res,200,await snes.choose('iso'));
+      if (url.pathname === '/api/snes/prepare') return json(res,202,snes.start('prepare'));
+      if (url.pathname === '/api/snes/sync') return json(res,202,snes.start('sync',body));
+      if (url.pathname === '/api/snes/cancel') return json(res,200,snes.cancel());
+      if (url.pathname === '/api/snes/reveal') return json(res,200,await snes.reveal());
+      return json(res,404,{error:'Comando não encontrado.'});
+    } catch(e) { return json(res,400,{error:e.message}); }
   }
   if (url.pathname.startsWith('/api/queue')) {
     if (req.headers.origin && !['http://localhost:' + UI_PORT, 'http://127.0.0.1:' + UI_PORT].includes(req.headers.origin)) return json(res, 403, { error: 'Origem não permitida.' });
@@ -188,6 +211,7 @@ const ui = http.createServer(async (req, res) => {
       const body = await readBody(req);
       if (url.pathname === '/api/library/remove-source') return json(res, 200, await library.removeSource(body.id));
       if (url.pathname === '/api/library/use') {
+        if (snes.running) throw new Error('Aguarde a tarefa SNES terminar.');
         if (queue.active) throw new Error('Aguarde a tarefa atual da fila terminar.');
         const item = await library.item(body.id);
         if (queue.active) throw new Error('Aguarde a tarefa atual da fila terminar.');
@@ -217,6 +241,7 @@ const ui = http.createServer(async (req, res) => {
     const mutating = req.method === 'POST';
     if (mutating) manualConversionRequests++;
     try {
+      if (snes.running && mutating && !['/api/conversion/reveal','/api/conversion/folder'].includes(url.pathname)) throw new Error('Aguarde a tarefa SNES terminar.');
       if (queue.active && req.method === 'POST' && !['/api/conversion/reveal', '/api/conversion/folder'].includes(url.pathname)) throw new Error('Use os controles da fila para a tarefa atual.');
       if (req.method === 'GET' && url.pathname === '/api/conversion/cover') {
         if (!conversion.cover) { res.writeHead(404); return res.end(); }
@@ -259,7 +284,7 @@ const ui = http.createServer(async (req, res) => {
     } catch (e) { return json(res, 500, { error: e.message }); }
   }
   if (req.method === 'POST' && url.pathname === '/api/install') {
-    if (queue.active || manualInstalling) return json(res, 409, { error: 'Aguarde a tarefa atual terminar.' });
+    if (queue.active || manualInstalling || snes.running) return json(res, 409, { error: 'Aguarde a tarefa atual terminar.' });
     manualInstalling = true;
     try {
       if (queue.active) throw new Error('Pause a fila antes de usar o envio manual.');
@@ -310,4 +335,4 @@ files.on('error', err => { console.error(`Não foi possível iniciar o servidor 
 ui.listen(UI_PORT, '127.0.0.1', () => console.log(`Interface: http://localhost:${UI_PORT}`));
 files.listen(FILE_PORT, '0.0.0.0', () => console.log(`Servidor de pacotes na porta ${FILE_PORT}; acesso limitado ao PS4 informado. IPs do Mac: ${localIPv4s().join(', ') || 'não detectado'}`));
 
-for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { queue.shutdown(); queuedConversion.cancel(); conversion.cancel(); library.cancel(); Promise.allSettled([conversion.done, queuedConversion.done, library.done, queue.done]).finally(() => process.exit(0)); });
+for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { queue.shutdown(); queuedConversion.cancel(); conversion.cancel(); library.cancel(); snes.cancel(); Promise.allSettled([conversion.done, queuedConversion.done, library.done, queue.done, snes.done]).finally(() => process.exit(0)); });

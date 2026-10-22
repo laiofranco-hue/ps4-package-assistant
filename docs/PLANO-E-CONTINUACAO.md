@@ -100,4 +100,11 @@ O usuário confirmou Mario, controles, som e estado salvo após reabrir e autori
 
 Há 773 artes de títulos identificados, 72 artes de jogo-base sinalizadas e 201 capas neutras para casos sem correspondência segura. [Detalhes e limites](BIBLIOTECA-SNES-CAPAS.md). Nove testes Python passaram. O usuário foi solicitado a conferir a coleção e as capas na TV e recarregar seu estado de Mario. Isso ainda não comprova compatibilidade de todas as ROMs.
 
-O app de Mac e o DMG não foram alterados: as ferramentas desta etapa preparam a biblioteca e o pSNES instalado a consome. Um novo painel SNES e sincronização pela interface continuam como próxima integração, sem reformulação visual automática. Não iniciar outras plataformas ou grande mudança de layout apenas por esta entrega.
+Na etapa de cópia da coleção, o app de Mac e o DMG não foram alterados: as ferramentas prepararam a biblioteca e o pSNES instalado a consumiu. A integração subsequente do painel SNES está descrita abaixo. Outras plataformas e grande mudança de layout seguem fora deste escopo.
+
+
+## Integração SNES com capas — 21/10/2026
+
+Decisão confirmada: integrar ao app o fluxo de biblioteca SNES já validado no console, mantendo o visual atual. Implementados abertura de coleção preparada e persistência, pesquisa/capas/filtro/paginação, Finder, preparação explícita de ISO com ROMS e sincronização manual por FTP com pSNES fechado, backups e verificação de hashes. O app não instala automaticamente o emulador nem gera PKGs individuais de SNES.
+
+Validação: 25 testes JavaScript em série, 14 testes Python, preparo real de uma ISO de teste e inspeção da interface com 1.046 entradas. Nova sincronização da coleção real pelo botão não foi executada nesta etapa; a prova anterior no console permanece confirmada. Polimento visual, PS1 e outros emuladores continuam como propostas futuras, sem promessa de compatibilidade. Próximo teste de uso: abrir a seção Super Nintendo no app instalado; uma próxima sincronização deve terminar com conferência de lista/capas/save no console.

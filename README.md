@@ -120,4 +120,16 @@ O [teste de pSNES no PS4](docs/TESTE-SNES-PS4.md) prepara a próxima integraçã
 
 ## Coleção SNES e capas
 
-O [procedimento de biblioteca SNES com capas](docs/BIBLIOTECA-SNES-CAPAS.md) descreve importação da ISO fornecida, identificação por conteúdo, capas do Libretro e cópia FTP que preserva arquivos existentes e saves. Versões não identificadas usam arte do jogo-base explicitamente sinalizada ou cartões neutros. Os componentes são ferramentas locais; ainda não há novo painel SNES no app. Conteúdo dos jogos e imagens permanecem fora do Git e do DMG.
+O [procedimento de biblioteca SNES com capas](docs/BIBLIOTECA-SNES-CAPAS.md) descreve importação da ISO fornecida, identificação por conteúdo, capas do Libretro e cópia FTP que preserva arquivos existentes e saves. Versões não identificadas usam arte do jogo-base explicitamente sinalizada ou cartões neutros. Os componentes locais agora são acessíveis pela seção Super Nintendo do app. Conteúdo dos jogos e imagens permanecem fora do Git e do DMG.
+
+
+### Biblioteca SNES no app
+
+Use **Super Nintendo** para abrir coleções preparadas, pesquisar jogos com capas, preparar outra ISO com pasta ROMS e sincronizar manualmente com o pSNES via FTP do GoldHEN. Requer pSNES já instalado/inicializado, Python 3 e Pillow para preparar capas. As saídas e backups ficam locais, fora do iCloud. Não baixa ROMs nem cria um PKG por jogo. Veja [o procedimento e os limites](docs/BIBLIOTECA-SNES-CAPAS.md#uso-no-app).
+
+Execute os testes de API em série, pois os simuladores de PS4 compartilham a porta 12800:
+
+```sh
+node --test --test-concurrency=1 test-*.cjs
+python3 -m unittest discover -s scripts -p 'test*.py' -v
+```

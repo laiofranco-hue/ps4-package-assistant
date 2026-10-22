@@ -42,7 +42,7 @@ Preparação e transferência verificadas não comprovam jogabilidade de todas a
 - `scripts/snes_upload.py`: cópia FTP sem sobrescrever arquivos diferentes, com conferência remota.
 - `scripts/test_snes_library.py`: regressões de identificação, cabeçalhos, ZIPs, capas, XML e FTP simulado.
 
-Esses componentes ainda não constituem um novo painel do app. Não houve reformulação visual ou mudança no conversor PS2. A integração desses controles à interface é uma etapa própria.
+Esses componentes agora são usados pela seção Super Nintendo do app, com o worker `scripts/snes_app.py`, a API `snes.js` e os controles `snes-ui.js`. O conversor PS2 mantém seu fluxo.
 
 ```sh
 python3 -m unittest discover -s scripts -p 'test*.py' -v
@@ -56,9 +56,29 @@ Cópia concluída no PS4 em 21/10/2026: **1.046 entradas e 1.015 imagens distint
 
 Antes de publicar os metadados, três arquivos de saves/configuração foram copiados para backup local. Os arquivos de save permaneceram byte a byte iguais após a atualização. A lista anterior e a configuração original também ficaram em backups remotos. A única preferência alterada foi exibir os títulos do XML em vez dos nomes curtos dos arquivos. Não houve mudança nas configurações de emulação.
 
-O usuário foi solicitado a reabrir pSNES, conferir a lista, a capa de Mario e seu estado salvo. Essa verificação visual da coleção expandida permanece pendente. O teste anterior de Mario, controles, som e estado salvo continua confirmado pelo usuário; não se declara teste individual de todas as entradas.
+O usuário foi solicitado a reabrir pSNES, conferir a lista, a capa de Mario e seu estado salvo. Essa verificação visual da coleção expandida foi posteriormente confirmada pelo usuário, conforme registro abaixo. O teste anterior de Mario, controles, som e estado salvo continua confirmado pelo usuário; não se declara teste individual de todas as entradas.
 
 
 ### Confirmação final do usuário — 21/10/2026
 
 Após reabrir o pSNES, o usuário confirmou: lista, capas e estado salvo de Mario funcionando. A verificação visual da coleção expandida está concluída para esses critérios. Isso não constitui teste de execução individual das 1.046 entradas nem confirmação separada de salvamento interno em todos os jogos.
+
+
+## Uso no app
+
+A seção **Super Nintendo · biblioteca com capas** abre uma pasta preparada que contenha `manifest.json` e `roms/`. A seleção fica lembrada após reiniciar o app. Pesquise pelo título ou nome do arquivo, filtre artes/cartões neutros e use Mostrar mais jogos. A pasta pode ser revelada no Finder. Só as origens escolhidas são abertas; não há busca pelo computador inteiro.
+
+Em **Preparar outra ISO com jogos SNES**, escolha uma ISO com pasta `ROMS/` e clique em **Preparar jogos e capas**. Os componentes anteriores fazem cópias locais com extensões minúsculas, identificam as ROMs e preparam as imagens. Não baixa jogos, não envia ao console e não gera PKG por jogo. Requer Python 3 e Pillow; `SNES_PYTHON` permite escolher um interpretador com Pillow. A primeira preparação baixa o DAT No-Intro e o índice de artes da revisão fixada; o manifesto registra o hash do DAT e a revisão das imagens. As coleções ficam em uma subpasta exclusiva da área local `ps4-package-assistant-local/snes-app/collections/`, fora do iCloud.
+
+Para **Sincronizar com pSNES**, informe o IP do console na seção de conexão, ative o FTP anônimo do GoldHEN na porta 2121, feche completamente o pSNES e marque a confirmação. O emulador precisa já estar instalado e ter sido aberto/fechado uma vez. O app não instala o pSNES automaticamente. O Remote Package Installer continua reservado ao envio de PKGs.
+
+A sincronização compara os hashes locais e remotos, rejeita ROMs diferentes no mesmo destino e conflitos de nomes-base de saves, faz backup dos saves/lista/configuração e só publica metadados depois da cópia. Preserva entradas desconhecidas da lista. Mantém preferências de emulação; cadastra a pasta SNES e exibe os títulos da lista. A publicação mantém cópias anteriores e tenta restaurar os metadados se ocorrer falha; uma desconexão também pode impedir a restauração, devendo-se revisar o backup antes de continuar. Backups e recibos ficam na pasta de trabalho local; nenhuma biblioteca é automaticamente reenviada após reiniciar.
+
+Cancelar aguarda o arquivo ou fase atual terminar. A pequena transação final dos metadados conclui ou tenta restaurar os arquivos anteriores antes de encerrar. Durante a tarefa SNES, o app bloqueia início de conversão/envio simultâneo. Reabrir pSNES e conferir os jogos e os saves continua sendo a validação final de cada nova sincronização.
+
+### Validação da integração
+
+- 25 testes JavaScript e 14 testes Python: API, seleção persistida, proteção de caminhos, bloqueio entre tarefas, conflitos de ROM/save, preservação de arquivos desconhecidos, cancelamento e restauração dos metadados com FTP simulado.
+- Preparação completa com uma ISO de teste criada localmente: extração real, extensão minúscula, identificação, PNG neutro e seleção persistida; ISO de origem preservada.
+- Interface conferida com a coleção existente de 1.046 entradas: capas, pesquisa, filtro de 201 cartões neutros, paginação, confirmação antes do envio e largura de 375 px sem transbordamento.
+- Esta integração não reenviou a coleção real ao PS4. A entrega anterior no console e a confirmação do usuário permanecem válidas; o novo botão de sincronização foi verificado com FTP simulado.
