@@ -79,3 +79,14 @@ confirmed both embedded module hashes match the SDK sources. Both the receiver
 and harmless probe were rebuilt; earlier probes also lacked these modules and
 must not be used for the next console test. The packaging omission is confirmed;
 whether it is the only launch problem still requires hardware validation.
+
+The operator subsequently confirmed 0.13 opens. Its live health endpoint returned
+version `0.1.3`, `ready:false`; the protected operation reported
+`MODULO 80020002`. Thus launch and networking work, but installing is not ready.
+The dynamic module paths introduced in 0.11 used `/system/common/lib`, which is
+not the application's sandbox path. Version 0.14 builds the path using
+`sceKernelGetFsSandboxRandomWord()` as the SDK Piglet sample does, checks bounds,
+and keeps failures explicit. It also formats kernel trace messages before
+calling DebugOutText: the collected 0.13 log contained literal format placeholders.
+No probe was sent while health reported false. Runtime readiness and transfer
+still require a new hardware test.

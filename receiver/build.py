@@ -64,7 +64,7 @@ def main():
     draw.rectangle((70,125,442,155),fill='#72a7ff');draw.rectangle((70,215,350,245),fill='#72a7ff');draw.rectangle((70,305,260,335),fill='#72a7ff')
     icon.save(system/'icon0.png')
     sfo=system/'param.sfo';run([pkgtool,'sfo_new',sfo],env=env)
-    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.13'),'ATTRIBUTE':('Integer',4,'0'),'CATEGORY':('Utf8',4,'gd'),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.13')}
+    entries={'APP_TYPE':('Integer',4,'1'),'APP_VER':('Utf8',8,'0.14'),'ATTRIBUTE':('Integer',4,'0'),'CATEGORY':('Utf8',4,'gd'),'CONTENT_ID':('Utf8',48,content),'DOWNLOAD_DATA_SIZE':('Integer',4,'0'),'SYSTEM_VER':('Integer',4,'0'),'TITLE':('Utf8',128,title),'TITLE_ID':('Utf8',12,title_id),'VERSION':('Utf8',8,'0.14')}
     for key,(kind,size,value) in entries.items():run([pkgtool,'sfo_setentry',sfo,key,'--type',kind,'--maxsize',size,'--value',value],env=env)
     about=system/'about';about.mkdir(exist_ok=True)
     (about/'NOTICE.txt').write_text('Diagnostic homebrew built with OpenOrbis v0.5.4. Source and test status: ps4-package-assistant/receiver. cJSON v1.7.19 MIT license included. Not an official Sony application.\n')

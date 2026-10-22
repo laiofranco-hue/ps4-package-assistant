@@ -30,18 +30,23 @@ static int (*sceAppInstUtilInitialize)(void);
 static int (*sceAppInstUtilAppExists)(const char *,int *);
 static int installer_modules(char *error,size_t size){
     struct {const char *path;const char *symbol;void **target;} imports[]={
-        {"/system/common/lib/libSceAppInstUtil.sprx","sceAppInstUtilInitialize",(void**)&sceAppInstUtilInitialize},
-        {"/system/common/lib/libSceAppInstUtil.sprx","sceAppInstUtilAppExists",(void**)&sceAppInstUtilAppExists},
-        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceIntInit",(void**)&sceBgftServiceIntInit},
-        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceIntDownloadRegisterTask",(void**)&sceBgftServiceIntDownloadRegisterTask},
-        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceDownloadStartTask",(void**)&sceBgftServiceDownloadStartTask},
-        {"/system/common/lib/libSceBgft.sprx","sceBgftServiceDownloadGetProgress",(void**)&sceBgftServiceDownloadGetProgress}
+        {"libSceAppInstUtil.sprx","sceAppInstUtilInitialize",(void**)&sceAppInstUtilInitialize},
+        {"libSceAppInstUtil.sprx","sceAppInstUtilAppExists",(void**)&sceAppInstUtilAppExists},
+        {"libSceBgft.sprx","sceBgftServiceIntInit",(void**)&sceBgftServiceIntInit},
+        {"libSceBgft.sprx","sceBgftServiceIntDownloadRegisterTask",(void**)&sceBgftServiceIntDownloadRegisterTask},
+        {"libSceBgft.sprx","sceBgftServiceDownloadStartTask",(void**)&sceBgftServiceDownloadStartTask},
+        {"libSceBgft.sprx","sceBgftServiceDownloadGetProgress",(void**)&sceBgftServiceDownloadGetProgress}
     };
+    const char *sandbox=sceKernelGetFsSandboxRandomWord();
+    if(!sandbox||!*sandbox){snprintf(error,size,"SANDBOX INDISPONIVEL");return -1;}
     int handle=-1;const char *last=NULL;
     for(size_t i=0;i<sizeof(imports)/sizeof(imports[0]);i++){
         if(!last||strcmp(last,imports[i].path)){
+            char module_path[256];
+            int length=snprintf(module_path,sizeof(module_path),"/%s/common/lib/%s",sandbox,imports[i].path);
+            if(length<0||(size_t)length>=sizeof(module_path)){snprintf(error,size,"CAMINHO DE MODULO INVALIDO");return -1;}
             platform_trace(imports[i].path,0);
-            handle=(int)sceKernelLoadStartModule(imports[i].path,0,NULL,0,NULL,NULL);
+            handle=(int)sceKernelLoadStartModule(module_path,0,NULL,0,NULL,NULL);
             if(handle<0){snprintf(error,size,"MODULO %08X",(unsigned)handle);return handle;}
             last=imports[i].path;
         }
@@ -52,13 +57,14 @@ static int installer_modules(char *error,size_t size){
 }
 
 void platform_trace(const char *stage,int code){
-    sceKernelDebugOutText(0,"[PKGA 0.13] %s code=%08X\n",stage,(unsigned)code);
+    char line[384];snprintf(line,sizeof(line),"[PKGA 0.14] %s code=%08X\n",stage,(unsigned)code);
+    sceKernelDebugOutText(0,line);
 }
 int platform_init(char ip[16],char *error,size_t size){
     enum OrbisSysModuleInternal modules[]={ORBIS_SYSMODULE_INTERNAL_SYSCORE,ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE,ORBIS_SYSMODULE_INTERNAL_USER_SERVICE,ORBIS_SYSMODULE_INTERNAL_NET,ORBIS_SYSMODULE_INTERNAL_NETCTL,ORBIS_SYSMODULE_INTERNAL_APP_INST_UTIL,ORBIS_SYSMODULE_INTERNAL_BGFT};
     snprintf(ip,16,"0.0.0.0");
     for(size_t i=0;i<sizeof(modules)/sizeof(modules[0]);i++){
-        sceKernelDebugOutText(0,"[PKGA 0.13] load module=%08X\n",(unsigned)modules[i]);
+        platform_trace("load module",(int)modules[i]);
         int code=(int)sceSysmoduleLoadModuleInternal(modules[i]);
         platform_trace("module returned",code);
         /* Some modules are already loaded by startup. Initialization below is authoritative. */
