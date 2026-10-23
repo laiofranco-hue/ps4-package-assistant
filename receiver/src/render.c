@@ -34,11 +34,9 @@ void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
     text(55,45,4,"PS4 PACKAGE ASSISTANT",0xfff3f5f8,44);
     char line[256];snprintf(line,sizeof(line),"IP %s : 12800 - PROTOTIPO",m->ip);text(55,100,2,line,0xff72a7ff,90);
     text(55,138,2,m->message,m->ready?0xffa6b0c0:0xffff8585,92);
-    int current=-1;
-    for(int i=0;i<m->count;i++)if(!m->jobs[i].complete && !m->jobs[i].progress.error){current=i;break;}
-    if(current<0 && m->count)current=m->count-1;
+    int current=current_job(m);
     if(current<0) {
-        text(55,230,3,"AGUARDANDO ENVIO DO MAC",0xfff3f5f8,60);
+        text(55,230,3,"AGUARDANDO NOVOS JOGOS",0xfff3f5f8,60);
         text(55,285,2,"MANTENHA ESTE APP ABERTO EM PRIMEIRO PLANO.",0xffa6b0c0,90);
     } else {
         const Job *job=&m->jobs[current];const Progress *p=&job->progress;
@@ -56,11 +54,17 @@ void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
         else snprintf(line,sizeof(line),"%.2f MB/S   RESTANTE %u S",job->speed/1e6,p->seconds);
         text(55,355,2,line,0xffa6b0c0,90);
     }
+    if(m->controls){
+        const char *action=current<0?"CIRCULO: VOLTAR AO MODO ESPERA":
+            (m->confirm_until>now && m->confirm_task==m->jobs[current].task)?
+            "CIRCULO NOVAMENTE: CONFIRMAR CANCELAMENTO": "CIRCULO: CANCELAR DOWNLOAD ATUAL";
+        text(55,397,2,action,0xff72a7ff,92);
+    }else text(55,397,2,"CONTROLE INDISPONIVEL. CANCELE PELO MAC OU DOWNLOADS.",0xffa6b0c0,92);
     text(55,430,2,"TAREFAS RECEBIDAS",0xff72a7ff,40);
     int first=m->count>5?m->count-5:0;
     for(int i=first;i<m->count;i++) {
         const Job *job=&m->jobs[i];
-        snprintf(line,sizeof(line),"%s  %s",job->progress.error?"ERRO":job->complete?"OK":"EM CURSO",job->title);
+        snprintf(line,sizeof(line),"%s  %s",job->cancelled?"CANCELADO":job->progress.error?"ERRO":job->complete?"OK":job->query_error?"CONFERIR":"EM CURSO",job->title);
         text(55,470+(i-first)*33,2,line,0xfff3f5f8,92);
     }
     text(55,668,2,"MB/S: TAXA OBSERVADA. FILA DE ENVIOS CONTROLADA PELO MAC.",0xffa6b0c0,96);

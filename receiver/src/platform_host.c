@@ -22,6 +22,9 @@ int platform_progress(int id,Progress *p){
     p->seconds=(uint32_t)((p->total-p->downloaded)/10000000)+ (p->downloaded<p->total?1:0);
     p->preparing=100;p->copying=p->downloaded==p->total?100:0;return 0;
 }
+int platform_controls_init(void){return 1;}
+int platform_cancel_pressed(void){return 0;}
+int platform_cancel(int task){return task>0 && task<next?0:-1;}
 int platform_exists(const char *title,int *exists){(void)title;*exists=0;return 0;}
 double platform_time(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec/1e9;}
 void platform_sleep(unsigned ms){usleep(ms*1000);}

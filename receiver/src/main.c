@@ -9,6 +9,7 @@
 static Model model;
 static pthread_mutex_t guard=PTHREAD_MUTEX_INITIALIZER;
 static int port=12800;
+static int cancel_pressed;
 static void response(int fd,int status,const char *text){
     char header[256];int size=snprintf(header,sizeof(header),"HTTP/1.1 %d Reply\r\nContent-Type: application/json\r\nContent-Length: %zu\r\nConnection: close\r\n\r\n",status,strlen(text));
     net_write(fd,header,(size_t)size);net_write(fd,text,strlen(text));
@@ -57,9 +58,11 @@ static void *serve(void *unused){
     for(;;){
         int fd=net_accept_ready(server);if(fd>=0){request(fd);net_close(fd);}
         double now=platform_time();
+        pthread_mutex_lock(&guard);int action=cancel_pressed;cancel_pressed=0;Model action_model=model;pthread_mutex_unlock(&guard);
+        if(action){controller_action(&action_model,now);pthread_mutex_lock(&guard);model=action_model;pthread_mutex_unlock(&guard);}
         if(now-previous>=1){
             Model next;pthread_mutex_lock(&guard);next=model;pthread_mutex_unlock(&guard);
-            for(int i=0;i<next.count;i++)if(!next.jobs[i].complete && !next.jobs[i].progress.error){
+            for(int i=0;i<next.count;i++)if(!next.jobs[i].complete && !next.jobs[i].cancelled && !next.jobs[i].progress.error){
                 Progress progress={0};int result=platform_progress(next.jobs[i].task,&progress);
                 if(result){next.jobs[i].query_error=result;next.jobs[i].speed=0;}
                 else sample(&next.jobs[i],&progress,now);
@@ -84,13 +87,15 @@ int main(int argc,char **argv){
 #ifndef __ORBIS__
     snprintf(model.message,sizeof(model.message),"SIMULADOR NO MAC - NENHUM PKG E INSTALADO NESTE MODO.");
 #endif
+    model.controls=platform_controls_init();
     uint32_t *pixels=NULL;
     platform_trace("screen open begin",0);
     if(screen_open(&pixels,1280,720)){fprintf(stderr,"Video initialization failed\n");return 1;}
     platform_trace("screen ready",0);
     pthread_t thread;if(pthread_create(&thread,NULL,serve,NULL))return 1;
     printf("Receiver listening on %d; ready=%d\n",port,model.ready);
-    for(;;){Model snapshot;pthread_mutex_lock(&guard);snapshot=model;pthread_mutex_unlock(&guard);
+    for(;;){if(platform_cancel_pressed()){pthread_mutex_lock(&guard);cancel_pressed=1;pthread_mutex_unlock(&guard);}
+        Model snapshot;pthread_mutex_lock(&guard);snapshot=model;pthread_mutex_unlock(&guard);
         render(pixels,1280,720,&snapshot,platform_time());screen_flip(&pixels);platform_sleep(100);
     }
 }

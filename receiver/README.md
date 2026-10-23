@@ -17,11 +17,11 @@ SDK fixado em dependencies.json. Compilação verificada com LLVM/lld 23.1.3 em 
 ```sh
 python3 receiver/build.py --sdk "$OO_PS4_TOOLCHAIN"
 python3 receiver/build.py --sdk "$OO_PS4_TOOLCHAIN" --probe
-# Identidade separada usada na prova 0.17 (PKGA00006):
+# Nova identidade separada 0.18 (PKGA00007), sem substituir 0.17:
 python3 receiver/build.py --sdk "$OO_PS4_TOOLCHAIN" --alternate-receiver
 ```
 
-`PS4_CC` e `PS4_LD` permitem informar caminhos de clang/ld.lld. Por padrão os arquivos são gerados na área local ps4-package-assistant-local/outputs/receiver/ps4. O relatório build.json informa hash, tamanho e verificações de integridade. O pacote receptor padrão usa Title ID **PKGA00001**; `--alternate-receiver` gera o teste 0.17 **PKGA00006**, nome **PS4 Package Assistant - Teste 0.17**; a prova de envio usa **PKGA00002**, mostra OK ao abrir e não acessa jogos, saves ou rede. O build rejeita saídas em pastas de nuvem usuais. Verificação de PKG não comprova execução no aparelho.
+`PS4_CC` e `PS4_LD` permitem informar caminhos de clang/ld.lld. Por padrão os arquivos são gerados na área local ps4-package-assistant-local/outputs/receiver/ps4. O relatório build.json informa hash, tamanho e verificações de integridade. O pacote receptor padrão usa Title ID **PKGA00001**; `--alternate-receiver` gera o teste 0.18 **PKGA00007**, nome **PS4 Package Assistant - Teste 0.18**; a prova de envio usa **PKGA00002**, mostra OK ao abrir e não acessa jogos, saves ou rede. O build rejeita saídas em pastas de nuvem usuais. Verificação de PKG não comprova execução no aparelho.
 
 ## Teste no console
 
@@ -61,3 +61,14 @@ symbol failures become diagnostic initialization errors. Package integrity
 and host protocol tests do not establish console compatibility; a new launch
 and harmless probe installation are still required. Never automatically
 delete/reinstall an application in response to this generic corruption dialog.
+
+
+## Cancelamento e modo de espera — versão 0.18
+
+A tela principal volta a **Aguardando novos jogos** quando não há tarefa ativa; erros, cancelamentos e conclusões ficam no histórico. Uma tarefa com consulta indisponível continua em atenção, pois falta confirmação de que parou.
+
+No controle, **Círculo** solicita cancelar a tarefa ativa; pressionar novamente em até cinco segundos confirma. O receptor chama apenas StopTask para o ID que ele próprio registrou. Não remove aplicativos instalados nem saves. Só registra cancelamento quando o serviço confirma; falha preserva a tarefa para conferência. Sem controle disponível, a tela orienta usar o Mac ou Downloads.
+
+A API `/api/cancel_task` aceita `task_id` de tarefa registrada nesta execução; a consulta de progresso sinaliza `cancelled:true`. O cliente atualizado solicita esse cancelamento ao interromper uma tarefa da fila. Sem confirmação (incluindo receptores antigos), mantém o envio em atenção e não inicia o seguinte automaticamente.
+
+Build separado: `--alternate-receiver` agora gera **PKGA00007 / Teste 0.18**, preservando o receptor 0.17 instalado. Compilação e testes simulados não confirmam os botões ou StopTask no hardware. Instalar/testar somente depois de terminar a fila em curso. A lista de próximos jogos ainda fica no Mac; o receptor mostra somente tarefas já recebidas. Exibir pendentes na TV é uma melhoria proposta, ainda não implementada.

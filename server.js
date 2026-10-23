@@ -91,6 +91,7 @@ async function installFile(file, { ps4Ip, macIp }, remember = () => {}) {
   });
   const text = await response.text();
   let result; try { result = JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token))); } catch { result = { raw: text }; }
+  if (Number.isInteger(result.task_id) && result.task_id >= 0) transfer.taskId = result.task_id;
   if (result.status === 'fail' && result.error_code != null) {
     const code = typeof result.error_code === 'number' ? '0x' + result.error_code.toString(16).toUpperCase() : result.error_code;
     result.error = `O PS4 recusou a instalação (${code}).` + (String(code).toLowerCase() === '0x80990015' ? ' Pode existir uma instalação ou download anterior deste pacote. Confira as notificações de Downloads no PS4 e remova apenas a tentativa falhada correspondente antes de tentar novamente.' : ' Confira as notificações do PS4 para mais detalhes.');
@@ -99,12 +100,26 @@ async function installFile(file, { ps4Ip, macIp }, remember = () => {}) {
   if (!response.ok || result.status === 'fail') removeTransfer(transfer, 'PS4 respondeu falha');
   return { httpStatus: response.status, result, packageUrl, size: stat.size };
 }
+async function cancelReceiverTask(ip, taskId) {
+  const response = await fetch(`http://${ip}:12800/api/cancel_task`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task_id: taskId }), signal: AbortSignal.timeout(5000)
+  });
+  const result = await response.json();
+  const confirmed = response.ok && result.status === 'success' && result.cancelled === true;
+  if (confirmed) for (const transfer of [...transfers]) if (transfer.ps4Ip === ip && transfer.taskId === taskId) {
+    for (const stop of transfer.streams) stop();
+    removeTransfer(transfer, 'cancelamento confirmado pelo receptor');
+  }
+  return confirmed;
+}
 const { TaskQueue } = require('./queue');
 const queuedConversion = new Conversion({ onComplete: file => { selectedFile = file; conversion.lastOutput = file; } });
 const queue = new TaskQueue({
   dataDir: process.env.QUEUE_DATA_DIR,
   busy: () => conversion.running || conversion.preparingCover || manualInstalling || manualConversionRequests > 0 || snes.running,
   install: installFile,
+  cancelSend: cancelReceiverTask,
   progress: async (ip, id) => {
     const response = await fetch(`http://${ip}:12800/api/get_task_progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: id }), signal: AbortSignal.timeout(15000) });
     const text = await response.text();
@@ -280,11 +295,13 @@ const ui = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/api/cancel') {
     try {
       if (queue.active?.kind === 'send') queue.cancel(queue.active.id);
+      const activeTask = queue.active?.taskId;
+      const outcomes = await Promise.allSettled(transfers.filter(t => t.taskId != null && t.taskId !== activeTask).map(t => cancelReceiverTask(t.ps4Ip, t.taskId)));
       cancelTransfers();
       let changed = false;
       for (const job of queue.jobs) if (job.token) { delete job.token; changed = true; }
       if (changed && !queue.readOnly) queue.save();
-      return json(res, 200, { cancelled: true });
+      return json(res, 200, { cancelled: true, receiverCancelled: outcomes.length > 0 && outcomes.every(o => o.status === 'fulfilled' && o.value === true) });
     } catch (e) { return json(res, 500, { error: e.message }); }
   }
   if (req.method === 'POST' && url.pathname === '/api/install') {

@@ -16,6 +16,13 @@ test('compiled receiver rejects malformed/foreign requests, reports 64-bit progr
  const progress=await post('/api/get_task_progress',{task_id:id});assert.equal(progress.data.length_total,6000000000);assert.equal(progress.data.error,0);assert.ok(progress.data.transferred_total<6000000000);
  body.bridge.content_id='IV0001-FAIL00001_00-0123456789ABCDEF';const failed=await post('/api/install',body);assert.equal(failed.data.status,'fail');assert.equal(failed.data.error_code,'0x80990015');
  body.bridge.content_id='IV0001-STRT00001_00-0123456789ABCDEF';const uncertain=await post('/api/install',body);assert.equal(uncertain.data.status,'attention');assert.ok(uncertain.data.task_id>0);
+ const cancelled=await post('/api/cancel_task',{task_id:id});assert.equal(cancelled.data.cancelled,true);
+ assert.equal((await post('/api/get_task_progress',{task_id:id})).data.cancelled,true);
+ assert.equal((await post('/api/cancel_task',{task_id:id})).data.status,'success');
+ assert.equal((await post('/api/cancel_task',{task_id:99999})).data.status,'fail');
+ assert.equal((await post('/api/cancel_task',{task_id:-1})).status,400);
+ body.bridge.content_id='IV0001-TEST00001_00-0123456789ABCDEF';
+ assert.equal((await post('/api/install',body)).data.status,'success'); // can receive again
  body.bridge.content_id='invalid';assert.equal((await post('/api/install',body)).status,400);
  assert.equal((await post('/api/get_task_progress',{task_id:-1})).status,400);
  assert.equal((await post('/api/health','{"a":'.repeat(20)+'0'+'}'.repeat(20))).status,400);

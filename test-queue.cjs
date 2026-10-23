@@ -79,3 +79,17 @@ test('registered task with a start warning preserves its ID and rechecks without
   assert.equal(f.q.jobs[0].status,'attention');assert.equal(f.q.jobs[0].taskId,42);assert.match(f.q.jobs[0].error,/início/);
   await f.q.recheck(f.q.jobs[0].id);await f.q.done;assert.equal(f.q.jobs[0].status,'success');assert.equal(installs,1);
 });
+
+test('send cancellation waits for console confirmation; unknown outcome stays in attention', async t => {
+  for (const confirmed of [true, false]) {
+    let cancelId, queried;
+    const reached = new Promise(resolve => { queried = resolve; });
+    const f = fixture(t, { install: async () => ({ httpStatus: 200, result: { status: 'success', task_id: 42 } }),
+      progress: async () => { queried(); return { status:'success', error:0, length_total:1000, transferred_total:1 }; },
+      cancelSend: async (ip, id) => { cancelId=id; return confirmed; } });
+    await f.q.add({kind:'send',file:f.pkg,options:{ps4Ip:'127.0.0.1',macIp:'127.0.0.1'}});
+    f.q.start();await reached;f.q.cancel(f.q.jobs[0].id);await f.q.done;
+    assert.equal(cancelId,42);assert.equal(f.q.jobs[0].status,confirmed?'cancelled':'attention');
+    assert.equal(f.q.enabled,false);
+  }
+});

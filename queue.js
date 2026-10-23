@@ -17,10 +17,10 @@ async function fingerprint(file, kind) {
   return { size: stat.size, mtimeMs: stat.mtimeMs, ctimeMs: stat.ctimeMs };
 }
 class TaskQueue {
-  constructor({ dataDir, runConversion, cancelConversion, install, progress, busy = () => false, pollMs = 2500 } = {}) {
+  constructor({ dataDir, runConversion, cancelConversion, install, progress, cancelSend, busy = () => false, pollMs = 2500 } = {}) {
     this.dir = dataDir || path.join(os.homedir(), 'Library', 'Application Support', 'PS4 Package Assistant', 'queue');
     this.file = path.join(this.dir, 'queue.json');
-    Object.assign(this, { runConversion, cancelConversion, install, progress, busy, pollMs });
+    Object.assign(this, { runConversion, cancelConversion, install, progress, cancelSend, busy, pollMs });
     this.jobs = []; this.enabled = false; this.active = null; this.error = ''; this.readOnly = false;
     try {
       const data = JSON.parse(fs.readFileSync(this.file, 'utf8'));
@@ -91,8 +91,14 @@ class TaskQueue {
           }
           job.status = 'success'; job.error = '';
         } catch (e) {
-          job.status = job.kind === 'send' && (job.taskId != null || e.uncertain) ? 'attention' : (this.controller.signal.aborted ? 'cancelled' : 'error');
-          job.error = e.message; this.enabled = false;
+          let stopped = false;
+          if (job.kind === 'send' && job.taskId != null && this.controller.signal.aborted && this.cancelSend) {
+            try { stopped = (await this.cancelSend(job.options.ps4Ip, job.taskId)) === true; }
+            catch { /* Preserve attention when the console did not confirm cancellation. */ }
+          }
+          stopped = stopped || e.cancelledOnConsole === true;
+          job.status = stopped ? 'cancelled' : job.kind === 'send' && (job.taskId != null || e.uncertain) ? 'attention' : (this.controller.signal.aborted ? 'cancelled' : 'error');
+          job.error = stopped ? 'Download cancelado no PS4. Receptor aguardando novos jogos.' : e.message; this.enabled = false;
         } finally { job.finishedAt = now(); this.save(); this.active = null; }
       }
     } catch (e) { this.error = 'Fila pausada: ' + e.message; }
@@ -103,6 +109,7 @@ class TaskQueue {
       this.controller.signal.throwIfAborted();
       const data = await this.progress(job.options.ps4Ip, job.taskId, this.controller.signal);
       this.controller.signal.throwIfAborted();
+      if (data.cancelled === true) { const e = new Error('Download cancelado no PS4.'); e.cancelledOnConsole = true; throw e; }
       if (data.status !== 'success') throw new Error('Não foi possível consultar a tarefa. Abra o Remote Package Installer e confira o download.');
       const num = v => Number(v);
       if (data.error == null || !Number.isFinite(num(data.error))) throw new Error('O PS4 não informou o estado de erro da tarefa. Confira Downloads.');
@@ -132,7 +139,7 @@ class TaskQueue {
     this.writable(); const job = this.jobs.find(j => j.id === id);
     if (this.busy() || this.active || !job || job.status !== 'attention' || job.taskId == null) throw new Error('Não há envio disponível para consultar.');
     this.active = job; this.controller = new AbortController(); job.status = 'running'; this.save();
-    this.done = this.monitor(job).then(() => { job.status = 'success'; job.error = ''; }).catch(e => { job.status = 'attention'; job.error = e.message; }).finally(() => { job.finishedAt = now(); this.active = null; this.save(); });
+    this.done = this.monitor(job).then(() => { job.status = 'success'; job.error = ''; }).catch(e => { job.status = e.cancelledOnConsole ? 'cancelled' : 'attention'; job.error = e.message; }).finally(() => { job.finishedAt = now(); this.active = null; this.save(); });
     return this.state();
   }
   shutdown() { this.enabled = false; if (this.active) this.cancel(this.active.id); return this.done; }

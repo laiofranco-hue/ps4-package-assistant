@@ -7,6 +7,7 @@
 #include <orbis/libkernel.h>
 #include <orbis/Sysmodule.h>
 #include <orbis/UserService.h>
+#include <orbis/Pad.h>
 /* Internal installer modules must not become startup PRX dependencies. */
 #include <orbis/VideoOut.h>
 #include <orbis/Net.h>
@@ -24,6 +25,7 @@ _Static_assert(sizeof(BgftDownload)==104,"BGFT download ABI");
 static int (*sceBgftServiceIntInit)(BgftInit *);
 static int (*sceBgftServiceIntDownloadRegisterTask)(BgftDownload *,int *);
 static int (*sceBgftServiceDownloadStartTask)(int);
+static int (*stop_task)(int);
 static int (*sceBgftServiceDownloadGetProgress)(int,Progress *);
 
 static int (*sceAppInstUtilInitialize)(void);
@@ -53,11 +55,12 @@ static int installer_modules(char *error,size_t size){
         int code=sceKernelDlsym(handle,imports[i].symbol,imports[i].target);
         if(code||!*imports[i].target){snprintf(error,size,"SIMBOLO %08X",(unsigned)code);return code?code:-1;}
     }
+    sceKernelDlsym(handle,"sceBgftServiceDownloadStopTask",(void**)&stop_task);
     return 0;
 }
 
 void platform_trace(const char *stage,int code){
-    char line[384];snprintf(line,sizeof(line),"[PKGA 0.17] %s code=%08X\n",stage,(unsigned)code);
+    char line[384];snprintf(line,sizeof(line),"[PKGA 0.18] %s code=%08X\n",stage,(unsigned)code);
     sceKernelDebugOutText(0,line);
 }
 int platform_init(char ip[16],char *error,size_t size){
@@ -93,6 +96,28 @@ int platform_install(const char *cid,const char *url,const char *title,uint64_t 
     code=sceBgftServiceIntDownloadRegisterTask(&params,task);if(code)return code;
     return sceBgftServiceDownloadStartTask(*task);
 }
+static int pad=-1;
+static uint32_t previous_buttons;
+static int (*read_pad)(int,OrbisPadData *);
+int platform_controls_init(void){
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_PAD);
+    const char *sandbox=sceKernelGetFsSandboxRandomWord();if(!sandbox)return 0;
+    char path[256];snprintf(path,sizeof(path),"/%s/common/lib/libScePad.sprx",sandbox);
+    int handle=(int)sceKernelLoadStartModule(path,0,NULL,0,NULL,NULL);if(handle<0)return 0;
+    int (*init)(void)=NULL;int (*open_pad)(int,int,int,void *)=NULL;
+    if(sceKernelDlsym(handle,"scePadInit",(void**)&init)||!init ||
+       sceKernelDlsym(handle,"scePadOpen",(void**)&open_pad)||!open_pad ||
+       sceKernelDlsym(handle,"scePadReadState",(void**)&read_pad)||!read_pad)return 0;
+    init();int user=0;if(sceUserServiceGetForegroundUser(&user))return 0;
+    pad=open_pad(user,0,0,NULL);return pad>=0;
+}
+int platform_cancel_pressed(void){
+    if(pad<0||!read_pad)return 0;
+    OrbisPadData data={0};if(read_pad(pad,&data)||!data.connected){previous_buttons=0;return 0;}
+    uint32_t pressed=data.buttons & ~previous_buttons;previous_buttons=data.buttons;
+    return (pressed & ORBIS_PAD_BUTTON_CIRCLE)!=0;
+}
+int platform_cancel(int task){return stop_task?stop_task(task):-1;}
 int platform_progress(int task,Progress *p){memset(p,0,sizeof(*p));return sceBgftServiceDownloadGetProgress(task,p);}
 int platform_exists(const char *title,int *exists){return sceAppInstUtilAppExists(title,exists);}
 double platform_time(void){return (double)sceKernelGetProcessTime()/1000000.0;}

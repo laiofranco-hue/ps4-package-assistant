@@ -34,7 +34,7 @@ char *command(Model *m,const char *route,const char *body,int *status){
     if(!cJSON_IsObject(root)){*status=400;r=failure(-1,"JSON invalido.");goto done;}
     if(!strcmp(route,"/api/health")){
         r=cJSON_CreateObject();cJSON_AddStringToObject(r,"receiver","ps4-package-assistant");
-        cJSON_AddStringToObject(r,"version","0.1.7");cJSON_AddBoolToObject(r,"ready",m->ready);goto done;
+        cJSON_AddStringToObject(r,"version","0.1.8");cJSON_AddBoolToObject(r,"ready",m->ready);goto done;
     }
     if(!m->ready){*status=503;r=failure(-2,m->message);goto done;}
     if(!strcmp(route,"/api/is_exists")){
@@ -43,8 +43,17 @@ char *command(Model *m,const char *route,const char *body,int *status){
         int code=platform_exists(title,&exists);if(code){r=failure(code,"Falha ao consultar titulo.");goto done;}
         r=cJSON_CreateObject();cJSON_AddStringToObject(r,"status","success");cJSON_AddBoolToObject(r,"exists",exists);goto done;
     }
+    if(!strcmp(route,"/api/cancel_task")){
+        int id;if(!task_id(root,&id)){*status=400;r=failure(-1,"task_id invalido.");goto done;}
+        int code=cancel_job(m,id);if(code){r=failure(code,"Cancelamento nao confirmado. Confira Downloads.");goto done;}
+        r=cJSON_CreateObject();cJSON_AddStringToObject(r,"status","success");cJSON_AddBoolToObject(r,"cancelled",1);goto done;
+    }
     if(!strcmp(route,"/api/get_task_progress")){
         int id;if(!task_id(root,&id)){*status=400;r=failure(-1,"task_id invalido.");goto done;}
+        for(int i=0;i<m->count;i++)if(m->jobs[i].task==id && m->jobs[i].cancelled){
+            r=cJSON_CreateObject();cJSON_AddStringToObject(r,"status","success");cJSON_AddBoolToObject(r,"cancelled",1);
+            cJSON_AddNumberToObject(r,"error",1);goto done;
+        }
         Progress p={0};int code=platform_progress(id,&p);
         if(code){r=failure(code,"Falha ao consultar progresso.");goto done;}
         double now=platform_time();for(int i=0;i<m->count;i++)if(m->jobs[i].task==id)sample(&m->jobs[i],&p,now);
