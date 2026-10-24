@@ -43,13 +43,17 @@ def main():
     parser.add_argument('--output',type=Path,default=Path.home()/'.codex/.chatgpt-projects/ps4-package-assistant-local/outputs/receiver/ps4')
     parser.add_argument('--alternate-receiver',action='store_true',help='Build 0.18 as PKGA00007 to preserve an installed receiver')
     parser.add_argument('--probe',action='store_true',help='Build a separate harmless install/launch test package')
+    parser.add_argument('--probe-variant',action='store_true',help='Build the second harmless cancellation probe as PKGA00008')
     args=parser.parse_args();sdk=args.sdk.resolve(strict=True);out=args.output.resolve()
     content=CONTENT;title_id='PKGA00001';title='PS4 Package Assistant - Teste'
     if args.alternate_receiver:
         if args.probe:raise ValueError('Choose receiver or probe, not both.')
         out=out/'alternate';content='IV0001-PKGA00007_00-PACKAGETEST00018';title_id='PKGA00007';title='PS4 Package Assistant - Teste 0.18'
     if args.probe:
-        out=out/'probe';content='IV0001-PKGA00002_00-TRANSFERTEST0001';title_id='PKGA00002';title='PS4 Assistant - Prova de envio'
+        out=out/('probe-variant' if args.probe_variant else 'probe')
+        content=('IV0001-PKGA00008_00-CANCELTEST000101' if args.probe_variant else 'IV0001-PKGA00002_00-TRANSFERTEST0001')
+        title_id='PKGA00008' if args.probe_variant else 'PKGA00002'
+        title='PS4 Assistant - Prova de cancelamento' if args.probe_variant else 'PS4 Assistant - Prova de envio'
     home=Path.home()
     for forbidden in (home/'Desktop',home/'Documents',home/'Library/Mobile Documents',home/'Library/CloudStorage'):
         if out==forbidden or forbidden in out.parents:raise ValueError('Use uma pasta local fora da nuvem.')
