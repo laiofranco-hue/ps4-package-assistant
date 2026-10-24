@@ -135,6 +135,6 @@ python3 -m unittest discover -s scripts -p 'test*.py' -v
 ```
 
 
-### Receptor próprio no PS4 — experimental
+### Receptor próprio no PS4 — versão validada
 
-A primeira prova nativa fica em [receiver/README.md](receiver/README.md). Ela mostra IP, tarefas recebidas, transferência e MB/s em uma tela simples. O instalador anterior é preservado; a fila do Mac continua controlando a ordem. PKGs de teste e SDK ficam somente na área local. Compilação e integridade foram verificadas, mas execução/instalação no PS4 ainda dependem do teste no aparelho. O protótipo aceita pacotes base completos; não substitui o instalador anterior para patches/DLC.
+A prova nativa fica em [receiver/README.md](receiver/README.md). O receptor mostra IP, transferência, velocidade, histórico e a fila pendente do Mac na TV. A fila envia somente itens aguardando, enviando ou em atenção; tarefas concluídas, canceladas e com erro ficam no histórico, evitando duplicação de nomes. O instalador anterior é preservado e a fila do Mac continua controlando a ordem. O PKGA00010 foi instalado e validado no PS4; dois envios de teste concluíram sem erro. PKGs de teste e SDK ficam somente na área local. O receptor aceita pacotes base completos; não substitui o instalador anterior para patches/DLC.
