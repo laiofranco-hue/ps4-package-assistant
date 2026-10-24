@@ -45,10 +45,13 @@ def main():
     parser.add_argument('--probe',action='store_true',help='Build a separate harmless install/launch test package')
     parser.add_argument('--probe-variant',action='store_true',help='Build the second harmless cancellation probe as PKGA00008')
     parser.add_argument('--queue-receiver',action='store_true',help='Build the queue-on-TV receiver as PKGA00009')
+    parser.add_argument('--queue-receiver-fix',action='store_true',help='Build the deduplicated queue-on-TV receiver as PKGA00010')
     args=parser.parse_args();sdk=args.sdk.resolve(strict=True);out=args.output.resolve()
     content=CONTENT;title_id='PKGA00001';title='PS4 Package Assistant - Teste'
-    if sum(bool(x) for x in (args.alternate_receiver,args.probe,args.probe_variant,args.queue_receiver))>1: raise ValueError('Escolha apenas uma variante.')
-    if args.queue_receiver:
+    if sum(bool(x) for x in (args.alternate_receiver,args.probe,args.probe_variant,args.queue_receiver,args.queue_receiver_fix))>1: raise ValueError('Escolha apenas uma variante.')
+    if args.queue_receiver_fix:
+        out=out/'queue-tv-fix';content='IV0001-PKGA00010_00-PACKAGEQUEUE0010';title_id='PKGA00010';title='PS4 Package Assistant - Fila na TV'
+    elif args.queue_receiver:
         out=out/'queue-tv';content='IV0001-PKGA00009_00-PACKAGEQUEUE0009';title_id='PKGA00009';title='PS4 Package Assistant - Fila na TV'
     elif args.alternate_receiver:
         if args.probe:raise ValueError('Choose receiver or probe, not both.')
