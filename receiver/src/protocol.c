@@ -36,6 +36,17 @@ char *command(Model *m,const char *route,const char *body,int *status){
         r=cJSON_CreateObject();cJSON_AddStringToObject(r,"receiver","ps4-package-assistant");
         cJSON_AddStringToObject(r,"version","0.1.8");cJSON_AddBoolToObject(r,"ready",m->ready);goto done;
     }
+    if(!strcmp(route,"/api/queue_snapshot")){
+        cJSON *items=field(root,"items");
+        if(!cJSON_IsArray(items)||cJSON_GetArraySize(items)>QUEUE_ITEMS){*status=400;r=failure(-1,"Fila invalida.");goto done;}
+        Model copy=*m; copy.queue_count=0;
+        cJSON *item=NULL; cJSON_ArrayForEach(item,items){
+            const char *title=string(item,"title"),*state=string(item,"status"); cJSON *pos=field(item,"position");
+            if(!clean_string(title,95)||!clean_string(state,15)||!cJSON_IsNumber(pos)||pos->valuedouble<0||pos->valuedouble>QUEUE_ITEMS||floor(pos->valuedouble)!=pos->valuedouble){*status=400;r=failure(-1,"Item de fila invalido.");goto done;}
+            QueueItem *out=&copy.queue[copy.queue_count++];snprintf(out->title,sizeof(out->title),"%s",title);snprintf(out->status,sizeof(out->status),"%s",state);out->position=pos->valueint;
+        }
+        *m=copy;r=cJSON_CreateObject();cJSON_AddStringToObject(r,"status","success");cJSON_AddNumberToObject(r,"items",m->queue_count);goto done;
+    }
     if(!m->ready){*status=503;r=failure(-2,m->message);goto done;}
     if(!strcmp(route,"/api/is_exists")){
         const char *title=string(root,"title_id");int exists=0;

@@ -17,10 +17,10 @@ async function fingerprint(file, kind) {
   return { size: stat.size, mtimeMs: stat.mtimeMs, ctimeMs: stat.ctimeMs };
 }
 class TaskQueue {
-  constructor({ dataDir, runConversion, cancelConversion, install, progress, cancelSend, busy = () => false, pollMs = 2500 } = {}) {
+  constructor({ dataDir, runConversion, cancelConversion, install, progress, cancelSend, busy = () => false, pollMs = 2500, onChange = () => {} } = {}) {
     this.dir = dataDir || path.join(os.homedir(), 'Library', 'Application Support', 'PS4 Package Assistant', 'queue');
     this.file = path.join(this.dir, 'queue.json');
-    Object.assign(this, { runConversion, cancelConversion, install, progress, cancelSend, busy, pollMs });
+    Object.assign(this, { runConversion, cancelConversion, install, progress, cancelSend, busy, pollMs, onChange });
     this.jobs = []; this.enabled = false; this.active = null; this.error = ''; this.readOnly = false;
     try {
       const data = JSON.parse(fs.readFileSync(this.file, 'utf8'));
@@ -40,6 +40,7 @@ class TaskQueue {
     const tmp = this.file + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify({ version: 1, jobs: this.jobs }), { mode: 0o600 });
     fs.renameSync(tmp, this.file);
+    try { this.onChange(this.state()); } catch { /* UI synchronization must not stop the queue. */ }
   }
   state() { return { enabled: this.enabled, active: this.active?.id || null, error: this.error, readOnly: this.readOnly, jobs: this.jobs.map(({ token, ...job }) => structuredClone(job)) }; }
   async add(spec) {

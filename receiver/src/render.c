@@ -60,12 +60,14 @@ void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
             "CIRCULO NOVAMENTE: CONFIRMAR CANCELAMENTO": "CIRCULO: CANCELAR DOWNLOAD ATUAL";
         text(55,397,2,action,0xff72a7ff,92);
     }else text(55,397,2,"CONTROLE INDISPONIVEL. CANCELE PELO MAC OU DOWNLOADS.",0xffa6b0c0,92);
-    text(55,430,2,"TAREFAS RECEBIDAS",0xff72a7ff,40);
+    text(55,430,2,"FILA NO MAC",0xff72a7ff,40);
     int first=m->count>5?m->count-5:0;
     for(int i=first;i<m->count;i++) {
         const Job *job=&m->jobs[i];
         snprintf(line,sizeof(line),"%s  %s",job->cancelled?"CANCELADO":job->progress.error?"ERRO":job->complete?"OK":job->query_error?"CONFERIR":"EM CURSO",job->title);
         text(55,470+(i-first)*33,2,line,0xfff3f5f8,92);
     }
-    text(55,668,2,"MB/S: TAXA OBSERVADA. FILA DE ENVIOS CONTROLADA PELO MAC.",0xffa6b0c0,96);
+    int qy=470+(m->count>5?5:m->count)*33;
+    for(int i=0;i<m->queue_count && qy<640;i++,qy+=27){snprintf(line,sizeof(line),"%02d %s  %s",m->queue[i].position,m->queue[i].status,m->queue[i].title);text(55,qy,2,line,0xfff3f5f8,92);}
+    text(55,668,2,"A FILA E A ORDEM SAO CONTROLADAS PELO MAC.",0xffa6b0c0,96);
 }

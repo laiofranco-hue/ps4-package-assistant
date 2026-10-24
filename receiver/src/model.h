@@ -2,6 +2,8 @@
 #define BRIDGE_MODEL_H
 #include "platform.h"
 #define JOBS 24
+#define QUEUE_ITEMS 24
+typedef struct { char title[96], status[16]; int position; } QueueItem;
 typedef struct {
     int task, query_error;
     char title[160];
@@ -16,6 +18,7 @@ typedef struct {
     int confirm_task;
     double confirm_until;
     char ip[16], message[160];
+    QueueItem queue[QUEUE_ITEMS]; int queue_count;
 } Model;
 int current_job(const Model *model);
 int cancel_job(Model *model,int task);

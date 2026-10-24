@@ -7,6 +7,8 @@ test('compiled receiver rejects malformed/foreign requests, reports 64-bit progr
  await new Promise((resolve,reject)=>{child.stdout.on('data',()=>resolve());child.once('error',reject);});
  const post=async(route,body,headers={})=>{const r=await fetch('http://127.0.0.1:14185'+route,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:typeof body==='string'?body:JSON.stringify(body)});return {status:r.status,data:await r.json()};};
  assert.equal((await post('/api/health',{})).data.receiver,'ps4-package-assistant');
+ assert.equal((await post('/api/queue_snapshot',{items:[{position:1,title:'Jogo de teste',status:'AGUARDANDO'}]})).data.items,1);
+ assert.equal((await post('/api/queue_snapshot',{items:[{position:1,title:'/caminho\nprivado',status:'AGUARDANDO'}]})).status,400);
  const fragmented=await new Promise((resolve,reject)=>{const socket=net.connect(14185,'127.0.0.1');let output='';socket.on('connect',()=>setTimeout(()=>{socket.write('POST /api/health HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{');setTimeout(()=>socket.write('}'),30);},30));socket.on('data',d=>output+=d);socket.on('end',()=>resolve(output));socket.on('error',reject);});assert.match(fragmented,/HTTP\/1.1 200/);
  assert.equal((await post('/api/health',{}, {Origin:'https://example.invalid'})).status,400);
  assert.equal((await post('/api/install','{')).status,400);

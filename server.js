@@ -114,12 +114,20 @@ async function cancelReceiverTask(ip, taskId) {
   return confirmed;
 }
 const { TaskQueue } = require('./queue');
+let queueSyncTimer;
+async function syncQueueSnapshot(state) {
+  const jobs = state.jobs.filter(j => j.kind === 'send' && ['pending','running','success','error','cancelled','attention'].includes(j.status));
+  const byIp = new Map(); for (const job of jobs) if (job.options?.ps4Ip) { if (!byIp.has(job.options.ps4Ip)) byIp.set(job.options.ps4Ip, []); byIp.get(job.options.ps4Ip).push(job); }
+  for (const [ip, list] of byIp) { const items=list.slice(0,24).map((j,i)=>({position:i+1,title:j.title.slice(0,95),status:j.status==='pending'?'AGUARDANDO':j.status==='running'?'ENVIANDO':j.status==='success'?'CONCLUIDO':j.status==='cancelled'?'CANCELADO':'ATENCAO'})); try { await fetch(`http://${ip}:12800/api/queue_snapshot`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items}),signal:AbortSignal.timeout(2500)}); } catch { /* Console may be offline; next queue change retries. */ } }
+}
+function scheduleQueueSync(state) { clearTimeout(queueSyncTimer); queueSyncTimer=setTimeout(()=>syncQueueSnapshot(state),250); }
 const queuedConversion = new Conversion({ onComplete: file => { selectedFile = file; conversion.lastOutput = file; } });
 const queue = new TaskQueue({
   dataDir: process.env.QUEUE_DATA_DIR,
   busy: () => conversion.running || conversion.preparingCover || manualInstalling || manualConversionRequests > 0 || snes.running,
   install: installFile,
   cancelSend: cancelReceiverTask,
+  onChange: scheduleQueueSync,
   progress: async (ip, id) => {
     const response = await fetch(`http://${ip}:12800/api/get_task_progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: id }), signal: AbortSignal.timeout(15000) });
     const text = await response.text();
