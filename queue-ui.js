@@ -3,6 +3,10 @@
   const labels = { pending: 'Aguardando', running: 'Em andamento', success: 'Concluída', error: 'Falhou', cancelled: 'Cancelada', interrupted: 'Interrompida', attention: 'Conferir no PS4', retried: 'Nova tentativa criada' };
   let last = '', limit = 20, timer, latest, lastResult = '';
   const message = $('queue-message');
+  function displayTitle(job) {
+    const title = String(job.title || '').replace(/\.(pkg|iso)$/i, '').replace(/^IV\d{4}-/, '');
+    return title.length > 54 ? title.slice(0, 51) + '…' : title;
+  }
   function failure(e) { $('queue-error').textContent = e.message; $('queue-error').hidden = false; }
   function node(tag, text, cls) { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
   async function request(action, body = {}) {
@@ -18,7 +22,7 @@
   }
   function row(job) {
     const li = node('li', null, 'library-item'); const info = node('div', null, 'library-info');
-    info.append(node('strong', job.title));
+    info.append(node('strong', displayTitle(job)));
     info.append(node('p', `${job.kind === 'convert' ? 'Conversão PS2' : 'Envio ao PS4'} · ${labels[job.status] || job.status}`, 'hint'));
     info.append(node('p', job.file, 'library-path'));
     if (job.kind === 'convert') info.append(node('p', `${job.options.emulator} · ${job.options.resolution} · ${job.options.cover ? 'Capa personalizada' : 'Capa padrão'}`, 'hint'));
