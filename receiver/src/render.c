@@ -35,31 +35,33 @@ static void short_title(char *out,size_t size,const char *value){
     snprintf(out,size,"%.*s...",(int)size-4,value);
 }
 void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
-    screen=pixels;w=width;h=height;rect(0,0,w,h,0xff10131a);
-    text(55,45,4,"PS4 PACKAGE ASSISTANT",0xfff3f5f8,44);
+    screen=pixels;w=width;h=height;rect(0,0,w,h,0xff111827);
+    rect(0,0,w,8,0xff67b7ff);
+    text(55,38,4,"PS4 PACKAGE ASSISTANT",0xfff5f7fa,44);
     char line[256];snprintf(line,sizeof(line),"IP %s : 12800 - PROTOTIPO",m->ip);text(55,100,2,line,0xff72a7ff,90);
-    text(55,138,2,m->message,m->ready?0xffa6b0c0:0xffff8585,92);
+    text(55,138,2,m->message,m->ready?0xffaeb8c7:0xffff8a8a,92);
     int current=current_job(m);
     if(current<0) {
-        text(55,190,2,"DOWNLOAD ATUAL",0xff72a7ff,32);
+        rect(40,175,1200,180,0xff1b2433);text(65,195,2,"DOWNLOAD ATUAL",0xff67b7ff,32);
         text(55,230,3,"AGUARDANDO NOVOS JOGOS",0xfff3f5f8,60);
         text(55,285,2,"MANTENHA ESTE APP ABERTO EM PRIMEIRO PLANO.",0xffa6b0c0,90);
     } else {
         text(55,190,2,"DOWNLOAD ATUAL",0xff72a7ff,32);
         const Job *job=&m->jobs[current];const Progress *p=&job->progress;
-        text(55,210,3,job->title,0xfff3f5f8,60);
+        rect(40,175,1200,180,0xff1b2433);text(65,195,2,"DOWNLOAD ATUAL",0xff67b7ff,32);
+        char current_title[80];short_title(current_title,sizeof(current_title),job->title);text(65,225,3,current_title,0xfff5f7fa,58);
         double percent=p->total ? (double)p->downloaded*100.0/(double)p->total : 0;
         if(percent>100)percent=100;
         snprintf(line,sizeof(line),"%.1f%%   %.2f / %.2f GB",percent,p->downloaded/1e9,p->total/1e9);
-        text(55,260,3,line,0xfff3f5f8,64);
-        rect(55,310,1170,20,0xff303847);rect(55,310,(int)(1170*percent/100),20,0xff72a7ff);
+        text(65,268,2,line,0xfff5f7fa,64);
+        rect(65,305,1150,20,0xff334155);rect(65,305,(int)(1150*percent/100),20,0xff67b7ff);
         if(job->query_error)snprintf(line,sizeof(line),"SEM ATUALIZACAO - ERRO %08X",(unsigned)job->query_error);
         else if(p->error)snprintf(line,sizeof(line),"ERRO NA INSTALACAO %08X",(unsigned)p->error);
         else if(job->complete)snprintf(line,sizeof(line),"TRANSFERENCIA CONCLUIDA - CONFIRA O JOGO NO PS4");
         else if(!p->total)snprintf(line,sizeof(line),"PREPARANDO DOWNLOAD - AGUARDANDO TAMANHO TOTAL");
         else if(now-job->updated>3)snprintf(line,sizeof(line),"AGUARDANDO ATUALIZACAO DO CONSOLE");
         else snprintf(line,sizeof(line),"%.2f MB/S   RESTANTE %u S",job->speed/1e6,p->seconds);
-        text(55,355,2,line,0xffa6b0c0,90);
+        text(65,340,2,line,0xffaeb8c7,90);
     }
     if(m->controls){
         const char *action=current<0?"CIRCULO: VOLTAR AO MODO ESPERA":
@@ -67,21 +69,22 @@ void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
             "CIRCULO NOVAMENTE: CONFIRMAR CANCELAMENTO": "CIRCULO: CANCELAR DOWNLOAD ATUAL";
         text(55,397,2,action,0xff72a7ff,92);
     }else text(55,397,2,"CONTROLE INDISPONIVEL. CANCELE PELO MAC OU DOWNLOADS.",0xffa6b0c0,92);
-    text(55,430,2,"HISTORICO",0xff72a7ff,24);
+    rect(40,370,585,270,0xff1b2433);rect(640,370,600,270,0xff1b2433);
+    text(65,400,2,"HISTORICO",0xff67b7ff,24);
     int first=m->count>3?m->count-3:0;
     for(int i=first;i<m->count;i++) {
         const Job *job=&m->jobs[i];
         snprintf(line,sizeof(line),"%s  %s",job->cancelled?"CANCELADO":job->progress.error?"ERRO":job->complete?"OK":job->query_error?"CONFERIR":"EM CURSO",job->title);
-        text(55,470+(i-first)*27,2,line,0xfff3f5f8,92);
+        text(65,440+(i-first)*42,2,line,0xfff5f7fa,76);
     }
     int qy=560;
-    text(55,qy-22,2,"FILA PENDENTE",0xff72a7ff,30);
+    text(665,400,2,"PROXIMOS ENVIOS",0xff67b7ff,30);
     qy+=10;
-    if(m->queue_count==0) text(55,qy,2,"NENHUM ITEM AGUARDANDO",0xffa6b0c0,38);
+    if(m->queue_count==0) text(665,qy,2,"NENHUM ITEM AGUARDANDO",0xffaeb8c7,38);
     for(int i=0;i<m->queue_count && qy<640;i++,qy+=27){
         uint32_t color=!strcmp(m->queue[i].status,"ENVIANDO")?0xffffd166:!strcmp(m->queue[i].status,"ATENCAO")?0xffff8585:0xff72a7ff;
         char title[72];short_title(title,sizeof(title),m->queue[i].title);
-        snprintf(line,sizeof(line),"%02d %s  %s",m->queue[i].position,m->queue[i].status,title);text(55,qy,2,line,color,92);
+        snprintf(line,sizeof(line),"%02d %s  %s",m->queue[i].position,m->queue[i].status,title);text(665,qy,2,line,color,76);
     }
     text(55,668,2,"A FILA E A ORDEM SAO CONTROLADAS PELO MAC.",0xffa6b0c0,96);
 }
