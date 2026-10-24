@@ -29,6 +29,11 @@ static void text(int x,int y,int scale,const char *value,uint32_t color,int max)
             rect(x+i*6*scale+col*scale,y+row*scale,scale,scale,color);
     }
 }
+static void short_title(char *out,size_t size,const char *value){
+    if(strlen(value)<size){snprintf(out,size,"%s",value);return;}
+    if(size<5){out[0]=0;return;}
+    snprintf(out,size,"%.*s...",(int)size-4,value);
+}
 void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
     screen=pixels;w=width;h=height;rect(0,0,w,h,0xff10131a);
     text(55,45,4,"PS4 PACKAGE ASSISTANT",0xfff3f5f8,44);
@@ -36,9 +41,11 @@ void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
     text(55,138,2,m->message,m->ready?0xffa6b0c0:0xffff8585,92);
     int current=current_job(m);
     if(current<0) {
+        text(55,190,2,"DOWNLOAD ATUAL",0xff72a7ff,32);
         text(55,230,3,"AGUARDANDO NOVOS JOGOS",0xfff3f5f8,60);
         text(55,285,2,"MANTENHA ESTE APP ABERTO EM PRIMEIRO PLANO.",0xffa6b0c0,90);
     } else {
+        text(55,190,2,"DOWNLOAD ATUAL",0xff72a7ff,32);
         const Job *job=&m->jobs[current];const Progress *p=&job->progress;
         text(55,210,3,job->title,0xfff3f5f8,60);
         double percent=p->total ? (double)p->downloaded*100.0/(double)p->total : 0;
@@ -60,14 +67,21 @@ void render(uint32_t *pixels,int width,int height,const Model *m,double now) {
             "CIRCULO NOVAMENTE: CONFIRMAR CANCELAMENTO": "CIRCULO: CANCELAR DOWNLOAD ATUAL";
         text(55,397,2,action,0xff72a7ff,92);
     }else text(55,397,2,"CONTROLE INDISPONIVEL. CANCELE PELO MAC OU DOWNLOADS.",0xffa6b0c0,92);
-    text(55,430,2,"FILA NO MAC",0xff72a7ff,40);
-    int first=m->count>5?m->count-5:0;
+    text(55,430,2,"HISTORICO",0xff72a7ff,24);
+    int first=m->count>3?m->count-3:0;
     for(int i=first;i<m->count;i++) {
         const Job *job=&m->jobs[i];
         snprintf(line,sizeof(line),"%s  %s",job->cancelled?"CANCELADO":job->progress.error?"ERRO":job->complete?"OK":job->query_error?"CONFERIR":"EM CURSO",job->title);
-        text(55,470+(i-first)*33,2,line,0xfff3f5f8,92);
+        text(55,470+(i-first)*27,2,line,0xfff3f5f8,92);
     }
-    int qy=470+(m->count>5?5:m->count)*33;
-    for(int i=0;i<m->queue_count && qy<640;i++,qy+=27){snprintf(line,sizeof(line),"%02d %s  %s",m->queue[i].position,m->queue[i].status,m->queue[i].title);text(55,qy,2,line,0xfff3f5f8,92);}
+    int qy=560;
+    text(55,qy-22,2,"FILA PENDENTE",0xff72a7ff,30);
+    qy+=10;
+    if(m->queue_count==0) text(55,qy,2,"NENHUM ITEM AGUARDANDO",0xffa6b0c0,38);
+    for(int i=0;i<m->queue_count && qy<640;i++,qy+=27){
+        uint32_t color=!strcmp(m->queue[i].status,"ENVIANDO")?0xffffd166:!strcmp(m->queue[i].status,"ATENCAO")?0xffff8585:0xff72a7ff;
+        char title[72];short_title(title,sizeof(title),m->queue[i].title);
+        snprintf(line,sizeof(line),"%02d %s  %s",m->queue[i].position,m->queue[i].status,title);text(55,qy,2,line,color,92);
+    }
     text(55,668,2,"A FILA E A ORDEM SAO CONTROLADAS PELO MAC.",0xffa6b0c0,96);
 }
