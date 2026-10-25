@@ -68,12 +68,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
         }
 
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 760),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            contentRect: NSRect(x: 0, y: 0, width: 980, height: 700),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "PS4 Package Assistant"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
         window.contentView = webView
         let visible = NSScreen.screens[0].visibleFrame
         window.setFrameOrigin(NSPoint(x: visible.midX - window.frame.width / 2, y: visible.midY - window.frame.height / 2))

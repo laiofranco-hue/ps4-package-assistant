@@ -7,428 +7,514 @@
 <style>
 :root {
   color-scheme: dark;
-  --bg: #141416;
-  --sidebar-bg: #1c1c1e;
-  --card-bg: rgba(36, 36, 39, 0.7);
+  --bg-window: #1e1e22;
+  --bg-sidebar: rgba(30, 30, 35, 0.72);
+  --bg-content: #161619;
+  --card-bg: rgba(255, 255, 255, 0.045);
+  --card-bg-hover: rgba(255, 255, 255, 0.07);
   --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-focus: rgba(10, 132, 255, 0.5);
-  --text: #f5f5f7;
-  --text-muted: #8e8e93;
-  --text-secondary: #aeaeb2;
-  --accent: #0a84ff;
-  --accent-hover: #409cff;
-  --accent-bg: rgba(10, 132, 255, 0.15);
-  --success: #30d158;
-  --success-bg: rgba(48, 209, 88, 0.15);
-  --warning: #ffd60a;
-  --warning-bg: rgba(255, 214, 10, 0.15);
-  --danger: #ff453a;
-  --danger-bg: rgba(255, 69, 58, 0.15);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
-  --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+  --card-border-subtle: rgba(255, 255, 255, 0.05);
+  --hairline: rgba(255, 255, 255, 0.12);
+  
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-tertiary: rgba(255, 255, 255, 0.42);
+  
+  --apple-blue: #0a84ff;
+  --apple-blue-hover: #2997ff;
+  --apple-green: #30d158;
+  --apple-yellow: #ffd60a;
+  --apple-red: #ff453a;
+  --apple-purple: #bf5af2;
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "Helvetica Neue", sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Helvetica Neue", sans-serif;
+  --font-mono: "SF Mono", Menlo, Monaco, monospace;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  margin: 0;
-  background-color: var(--bg);
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(10, 132, 255, 0.08) 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, rgba(48, 209, 88, 0.04) 0%, transparent 40%);
-  color: var(--text);
-  font: 14px/1.5 var(--font-system);
+  background-color: var(--bg-content);
+  color: var(--text-primary);
+  font: 13px/1.45 var(--font-text);
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Window Container & Liquid Glass Sidebar
+   ========================================================================== */
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-right: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
+  padding: 12px 14px 16px;
+  position: relative;
+  z-index: 10;
 }
 
-/* App Header & Navigation Bar */
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(20, 20, 22, 0.85);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid var(--card-border);
-  padding: 10px 20px;
+.window-drag-area {
+  height: 38px;
+  -webkit-app-region: drag;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  padding-left: 74px; /* Space for native traffic lights */
+  margin-bottom: 8px;
 }
 
-.brand-section {
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 8px 10px 4px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 180px;
-}
-
-.brand-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #0a84ff, #0056b3);
-  display: grid;
-  place-items: center;
-  box-shadow: 0 2px 6px rgba(10, 132, 255, 0.4);
-}
-
-.brand-icon svg {
-  width: 16px;
-  height: 16px;
-  fill: #ffffff;
-}
-
-.brand-name {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
   font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text);
-}
-
-/* macOS Segmented Tab Control */
-.tab-nav {
-  display: inline-flex;
-  background: rgba(120, 120, 128, 0.18);
-  padding: 3px;
-  border-radius: 10px;
-  gap: 2px;
-}
-
-.tab-btn {
+  font-weight: 500;
+  cursor: pointer;
   border: 0;
   background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.tab-btn:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.tab-btn.active {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 255, 255, 0.2) inset;
-}
-
-.header-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--card-border);
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 8px rgba(48, 209, 88, 0.6);
-}
-
-/* Main Container */
-.main-view {
-  flex: 1;
-  max-width: 960px;
   width: 100%;
-  margin: 0 auto;
-  padding: 28px 24px 48px;
+  text-align: left;
+  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.view-header {
-  margin-bottom: 24px;
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
 }
 
-.view-title {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  margin: 0 0 6px;
-  color: var(--text);
-}
-
-.view-desc {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-/* Cards & Surfaces */
-.card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-lg);
-  padding: 22px;
-  margin-bottom: 20px;
-  backdrop-filter: blur(20px);
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.15s ease;
-}
-
-.card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.card-title {
-  font-size: 16px;
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
   font-weight: 600;
-  margin: 0 0 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.25);
 }
 
-/* Drag & Drop Hero Zone */
-.dropzone {
-  border: 2px dashed rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-md);
-  padding: 32px 20px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.02);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  margin-bottom: 16px;
-}
-
-.dropzone:hover, .dropzone.drag-over {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-}
-
-.dropzone-icon {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 12px;
-  border-radius: 12px;
-  background: rgba(10, 132, 255, 0.12);
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
-  color: var(--accent);
-}
-
-.file-display {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  word-break: break-all;
-}
-
-.file-hint {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-/* Forms & Inputs */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
+  transition: color 0.15s ease;
 }
 
-input, select {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  font: inherit;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.15s ease;
+.nav-item.active .nav-icon {
+  color: var(--apple-blue);
 }
 
-input:focus, select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
+.nav-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }
 
-/* Buttons */
-button {
-  border: 0;
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.15s ease;
+/* Sidebar Connection Status Widget */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--card-border-subtle);
 }
 
-button.primary {
-  background: var(--accent);
-  color: #ffffff;
-  box-shadow: 0 1px 4px rgba(10, 132, 255, 0.35);
-}
-
-button.primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-button.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-button.secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-button.danger {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid rgba(255, 69, 58, 0.3);
-}
-
-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.actions-bar {
+.status-card {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--card-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 18px;
 }
 
-/* Status Notifications */
-.status-box {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  margin-top: 16px;
-  display: none;
-  font-size: 13px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
+.status-glow {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--apple-green);
+  box-shadow: 0 0 10px rgba(48, 209, 88, 0.75);
+  flex-shrink: 0;
 }
 
-.status-box.show { display: block; }
-.status-box.ok {
-  background: var(--success-bg);
-  border: 1px solid rgba(48, 209, 88, 0.3);
-  color: #8be6a3;
-}
-.status-box.err {
-  background: var(--danger-bg);
-  border: 1px solid rgba(255, 69, 58, 0.3);
-  color: #ff9d97;
-}
-
-/* SNES Visual Grid */
-.snes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 16px 14px;
-  list-style: none;
-  padding: 0;
-  margin: 18px 0;
-  max-height: 520px;
-  overflow-y: auto;
-}
-
-.snes-game {
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
-  padding: 10px;
+.status-info {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  min-width: 0;
 }
 
-.snes-game:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
+.status-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.snes-game img, .snes-no-cover {
-  width: 100%;
-  height: 130px;
-  object-fit: contain;
-  background: #0d0d10;
-  border-radius: 6px;
-}
-
-.snes-no-cover {
-  display: grid;
-  place-items: center;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.snes-game strong {
+.status-val {
   font-size: 12px;
-  line-height: 1.3;
-  color: var(--text);
+  font-weight: 600;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Badges & Pills */
+/* ==========================================================================
+   Main Content Area
+   ========================================================================== */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background-color: var(--bg-content);
+  background-image: radial-gradient(circle at 10% 0%, rgba(10, 132, 255, 0.04) 0%, transparent 45%),
+                    radial-gradient(circle at 90% 100%, rgba(48, 209, 88, 0.03) 0%, transparent 40%);
+  display: flex;
+  flex-direction: column;
+}
+
+.content-topbar {
+  height: 48px;
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+
+.content-inner {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 32px 56px;
+}
+
+/* Apple Typography & Headers */
+.view-header {
+  margin-bottom: 26px;
+}
+
+.view-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.view-subtitle {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+/* macOS Grouped Cards */
+.mac-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.mac-card:hover {
+  border-color: var(--hairline);
+}
+
+.card-heading {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   Hero Drag & Drop Zone (macOS AirDrop / Finder Style)
+   ========================================================================== */
+.dropzone {
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  padding: 34px 24px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--apple-blue);
+  background: rgba(10, 132, 255, 0.08);
+  transform: scale(1.004);
+}
+
+.dropzone-glyph {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  color: var(--apple-blue);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.dropzone:hover .dropzone-glyph {
+  transform: translateY(-2px);
+  background: rgba(10, 132, 255, 0.16);
+}
+
+.dropzone-glyph svg {
+  width: 26px;
+  height: 26px;
+  fill: currentColor;
+}
+
+.file-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.file-caption {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Apple Form Controls & Inputs
+   ========================================================================== */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+input[type="text"], input[type="search"], input[inputmode="decimal"], select {
+  height: 32px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0 10px;
+  font: 13px var(--font-text);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+input:focus, select:focus {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35);
+}
+
+/* macOS Switch Toggle */
+.mac-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mac-toggle input {
+  display: none;
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.16);
+  position: relative;
+  transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
+  flex-shrink: 0;
+}
+
+.toggle-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.mac-toggle input:checked + .toggle-track {
+  background: var(--apple-green);
+}
+
+.mac-toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(16px);
+}
+
+/* ==========================================================================
+   Buttons (macOS System Button Styles)
+   ========================================================================== */
+button {
+  font: 13px/1.4 var(--font-text);
+  cursor: pointer;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
+  white-space: nowrap;
+}
+
+button.primary {
+  background: var(--apple-blue);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0.5px rgba(255, 255, 255, 0.35);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--apple-blue-hover);
+  transform: translateY(-0.5px);
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+button.danger {
+  background: rgba(255, 69, 58, 0.14);
+  color: var(--apple-red);
+  border: 1px solid rgba(255, 69, 58, 0.28);
+  font-weight: 500;
+}
+
+button.danger:hover:not(:disabled) {
+  background: rgba(255, 69, 58, 0.22);
+}
+
+button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Feedback, Pills & Lists
+   ========================================================================== */
+.status-callout {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  margin-top: 14px;
+  display: none;
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.status-callout.show { display: block; }
+.status-callout.ok {
+  background: rgba(48, 209, 88, 0.14);
+  border: 1px solid rgba(48, 209, 88, 0.3);
+  color: #7ce89b;
+}
+.status-callout.err {
+  background: rgba(255, 69, 58, 0.14);
+  border: 1px solid rgba(255, 69, 58, 0.3);
+  color: #ff9b94;
+}
+
 .pill, .library-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   padding: 3px 8px;
   border-radius: 99px;
   font-size: 11px;
@@ -439,429 +525,485 @@ button:disabled {
 
 .library-items, .library-sources {
   list-style: none;
-  padding: 0;
-  margin: 0;
+  margin-top: 8px;
 }
 
 .library-item {
   display: flex;
   gap: 16px;
-  justify-content: space-between;
   align-items: center;
-  border-top: 1px solid var(--card-border);
-  padding: 14px 0;
+  justify-content: space-between;
+  border-top: 1px solid var(--card-border-subtle);
+  padding: 12px 0;
 }
 
 .library-info { min-width: 0; flex: 1; }
-.library-info strong { font-size: 14px; color: var(--text); }
-.library-path { font-size: 12px; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
-.library-error { color: var(--danger); font-size: 12px; }
-.library-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.library-info strong { font-size: 13.5px; color: var(--text-primary); font-weight: 600; }
+.library-path { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; word-break: break-all; }
+.library-error { color: var(--apple-red); font-size: 11.5px; }
 
-.cover-choice {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* SNES Apple Arcade Grid */
+.snes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px 14px;
+  list-style: none;
+  padding: 0;
+  margin: 18px 0;
+  max-height: 480px;
+  overflow-y: auto;
 }
 
-#cover-preview {
+.snes-game {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--card-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.snes-game:hover {
+  transform: translateY(-2px);
+  border-color: var(--hairline);
+}
+
+.snes-game img, .snes-no-cover {
+  width: 100%;
+  height: 130px;
   object-fit: contain;
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
   background: #0d0d10;
+  border-radius: var(--radius-sm);
+}
+
+.snes-no-cover {
+  display: grid;
+  place-items: center;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.snes-game strong {
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 pre {
-  background: #0d0d10;
-  border: 1px solid var(--card-border);
+  background: #0f0f12;
+  border: 1px solid var(--card-border-subtle);
   border-radius: var(--radius-sm);
   padding: 12px;
-  font: 12px/1.5 var(--font-mono);
+  font: 11.5px/1.5 var(--font-mono);
   max-height: 200px;
   overflow: auto;
-  color: #d1d5db;
+  color: rgba(255, 255, 255, 0.75);
 }
 
-details {
-  margin-top: 14px;
-}
-
-summary {
+details summary {
   cursor: pointer;
+  color: var(--apple-blue);
+  font-size: 12.5px;
   font-weight: 500;
-  color: var(--accent);
   padding: 4px 0;
 }
 
-.tab-panel[hidden] {
+.tab-pane[hidden] {
   display: none !important;
-}
-
-@media (max-width: 768px) {
-  .app-header { flex-direction: column; align-items: stretch; }
-  .tab-nav { overflow-x: auto; max-width: 100%; }
 }
 </style>
 </head>
 <body>
 
-<header class="app-header">
-  <div class="brand-section">
-    <div class="brand-icon">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM2 4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4zm7 5v6l5-3-5-3z"/></svg>
-    </div>
-    <span class="brand-name">PS4 Package Assistant</span>
-  </div>
+<div class="app-container">
 
-  <nav class="tab-nav" role="tablist">
-    <button class="tab-btn active" role="tab" data-tab="send" aria-selected="true">
-      <span>📦</span> Envio Direto
-    </button>
-    <button class="tab-btn" role="tab" data-tab="ps2" aria-selected="false">
-      <span>💿</span> Converter PS2
-    </button>
-    <button class="tab-btn" role="tab" data-tab="snes" aria-selected="false">
-      <span>🕹️</span> Super Nintendo
-    </button>
-    <button class="tab-btn" role="tab" data-tab="library" aria-selected="false">
-      <span>📚</span> Biblioteca
-    </button>
-    <button class="tab-btn" role="tab" data-tab="queue" aria-selected="false">
-      <span>📋</span> Fila & Histórico
-    </button>
-  </nav>
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar">
+    <div class="window-drag-area"></div>
 
-  <div class="header-status">
-    <div class="status-indicator">
-      <span class="status-dot"></span>
-      <span id="header-ps4-status">PS4: 192.168.18.45</span>
-    </div>
-  </div>
-</header>
+    <div class="sidebar-title">Menu Principal</div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="send">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        </span>
+        Instalador Rápido
+      </button>
 
-<main class="main-view">
+      <button class="nav-item" data-tab="ps2">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        </span>
+        Converter PS2
+      </button>
 
-  <!-- ABA 1: ENVIO DIRETO -->
-  <section id="panel-send" class="tab-panel" role="tabpanel">
-    <div class="view-header">
-      <h1 class="view-title">Instalador Direto</h1>
-      <p class="view-desc">Envie pacotes .pkg diretamente ao Remote Package Installer do console.</p>
-    </div>
+      <button class="nav-item" data-tab="snes">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        </span>
+        Super Nintendo
+      </button>
 
-    <div class="card">
-      <div class="card-title">1. Seleção do Pacote</div>
-      <div class="dropzone" id="dropzone-pkg">
-        <div class="dropzone-icon">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        </div>
-        <div class="file-display" id="file">Nenhum arquivo selecionado</div>
-        <p class="file-hint">Clique para selecionar ou arraste o arquivo .pkg para esta área.</p>
-      </div>
+      <button class="nav-item" data-tab="library">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+        </span>
+        Biblioteca Local
+      </button>
 
-      <div class="actions-bar" style="margin-top: 10px;">
-        <button class="secondary" id="choose">Selecionar arquivo .pkg…</button>
-        <div id="last-result" hidden style="display:inline-flex; align-items:center; gap:8px;">
-          <span class="pill" id="last-result-name"></span>
-          <button id="reveal-pkg" class="secondary">Mostrar no Finder</button>
-        </div>
-        <button id="open-converted" class="secondary">Abrir pasta de convertidos</button>
-      </div>
-    </div>
+      <button class="nav-item" data-tab="queue">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        </span>
+        Fila de Envios
+      </button>
+    </nav>
 
-    <div class="card">
-      <div class="card-title">2. Conexão com o PS4</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="ps4">Endereço IP do PS4</label>
-          <input id="ps4" value="192.168.18.45" inputmode="decimal" placeholder="Ex: 192.168.1.50">
-        </div>
-        <div class="form-group">
-          <label for="mac">Endereço IP deste Mac</label>
-          <input id="mac" value="192.168.18.106" inputmode="decimal">
+    <div class="sidebar-footer">
+      <div class="status-card">
+        <div class="status-glow"></div>
+        <div class="status-info">
+          <span class="status-label">Console PS4</span>
+          <span class="status-val" id="sidebar-ps4-ip">192.168.18.45</span>
         </div>
       </div>
-      <div class="pill" id="ipnote">Detectando interfaces de rede…</div>
-      <p class="file-hint" style="margin-top: 8px;">Certifique-se de que o app Remote Package Installer está aberto no PS4.</p>
     </div>
+  </aside>
 
-    <div class="card">
-      <div class="card-title">3. Enviar Pacote</div>
-      <div class="actions-bar" style="margin-top: 0;">
-        <button class="primary" id="send">Enviar ao PS4</button>
-        <button class="secondary" id="queue-send">Adicionar envio à fila</button>
-        <button class="danger" id="cancel">Interromper upload</button>
-      </div>
-      <div class="status-box" id="status" role="status" aria-live="polite"></div>
-    </div>
-  </section>
+  <!-- ==================== CONTENT AREA ==================== -->
+  <main class="content-area">
+    <div class="content-topbar"></div>
+    <div class="content-inner">
 
-  <!-- ABA 2: CONVERTER PS2 -->
-  <section id="panel-ps2" class="tab-panel" role="tabpanel" hidden>
-    <div class="view-header">
-      <h1 class="view-title">Converter ISO de PS2</h1>
-      <p class="view-desc">Transforme imagens de PlayStation 2 em pacotes PKG compatíveis com o emulador do PS4.</p>
-    </div>
+      <!-- ABA 1: INSTALADOR RÁPIDO -->
+      <section id="panel-send" class="tab-pane">
+        <header class="view-header">
+          <h1 class="view-title">Instalador de Pacotes</h1>
+          <p class="view-subtitle">Envio direto de arquivos PKG ao Remote Package Installer no console.</p>
+        </header>
 
-    <div class="card">
-      <div class="card-title">Arquivo de Entrada</div>
-      <div class="dropzone" id="dropzone-iso">
-        <div class="dropzone-icon">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
-        </div>
-        <div class="file-display" id="iso-file">Nenhuma ISO selecionada</div>
-        <p class="file-hint">A ISO original é preservada integralmente.</p>
-      </div>
-      <button class="secondary" id="choose-iso">Selecionar ISO de PS2…</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Personalização e Opções</div>
-      <div class="form-group">
-        <label for="convert-title">Nome do Jogo (Opcional)</label>
-        <input id="convert-title" maxlength="100" placeholder="Usar o nome identificado no disco">
-      </div>
-
-      <div class="form-group">
-        <label>Capa do Jogo (Opcional)</label>
-        <div class="cover-choice">
-          <img id="cover-preview" alt="Prévia da capa" width="96" height="96" hidden>
-          <div>
-            <div style="display:flex; gap:8px;">
-              <button class="secondary" id="choose-cover">Escolher capa…</button>
-              <button class="secondary" id="clear-cover" hidden>Remover capa</button>
+        <div class="mac-card">
+          <div class="card-heading">1. Pacote para Instalação</div>
+          <div class="dropzone" id="dropzone-pkg">
+            <div class="dropzone-glyph">
+              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
             </div>
-            <p id="cover-name" class="file-hint">Usar a capa padrão do pacote.</p>
+            <div class="file-title" id="file">Nenhum arquivo selecionado</div>
+            <p class="file-caption">Arraste seu arquivo .pkg aqui ou clique para buscar no Finder</p>
+          </div>
+
+          <div class="button-bar">
+            <button class="secondary" id="choose">Escolher arquivo .pkg…</button>
+            <div id="last-result" hidden style="display:inline-flex; align-items:center; gap:8px;">
+              <span class="pill" id="last-result-name"></span>
+              <button id="reveal-pkg" class="secondary">Mostrar no Finder</button>
+            </div>
+            <button id="open-converted" class="secondary">Pasta de convertidos</button>
           </div>
         </div>
-      </div>
 
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="emulator">Perfil do Emulador</label>
-          <select id="emulator">
-            <option>Jak v2</option>
-            <option>Rogue v1</option>
-          </select>
+        <div class="mac-card">
+          <div class="card-heading">2. Conexão de Rede</div>
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="ps4">Endereço IP do PS4</label>
+              <input id="ps4" value="192.168.18.45" inputmode="decimal">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="mac">Endereço IP deste Mac</label>
+              <input id="mac" value="192.168.18.106" inputmode="decimal">
+            </div>
+          </div>
+          <div class="pill" id="ipnote">Detectando rede…</div>
         </div>
-        <div class="form-group">
-          <label for="resolution">Renderização de Vídeo</label>
-          <select id="resolution">
-            <option value="2x2">2× — Alta Resolução (Padrão)</option>
-            <option value="1x1">1× — Resolução Nativa PS2</option>
-          </select>
+
+        <div class="mac-card">
+          <div class="card-heading">3. Execução</div>
+          <div class="button-bar">
+            <button class="primary" id="send">Enviar ao PS4</button>
+            <button class="secondary" id="queue-send">Adicionar à fila</button>
+            <button class="danger" id="cancel">Interromper upload</button>
+          </div>
+          <div class="status-callout" id="status" role="status" aria-live="polite"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="actions-bar">
-        <button class="primary" id="convert" disabled>Converter em PKG</button>
-        <button class="secondary" id="queue-convert">Adicionar à fila</button>
-        <button class="danger" id="cancel-conversion" hidden>Cancelar conversão</button>
-      </div>
+      <!-- ABA 2: CONVERSOR PS2 -->
+      <section id="panel-ps2" class="tab-pane" hidden>
+        <header class="view-header">
+          <h1 class="view-title">Conversor de ISO PS2</h1>
+          <p class="view-subtitle">Empacotamento de imagens de PlayStation 2 em PKG com emuladores otimizados.</p>
+        </header>
 
-      <p id="conversion-state" class="file-hint" role="status" style="margin-top: 14px;">Selecione uma ISO para começar.</p>
-      
-      <details id="conversion-details" hidden>
-        <summary>Registro detalhado da conversão</summary>
-        <pre id="conversion-log"></pre>
-      </details>
-      <details id="convert-panel" style="display:none;"></details>
-    </div>
-  </section>
-
-  <!-- ABA 3: SUPER NINTENDO -->
-  <section id="panel-snes" class="tab-panel" role="tabpanel" hidden>
-    <div class="view-header">
-      <h1 class="view-title" id="snes-heading">Super Nintendo · Coletâneas</h1>
-      <p class="view-desc">Extraia jogos de uma ISO SNES com capas prontas e sincronize com o pSNES do PS4.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-title">1. Coletânea e Preparação</div>
-      <p class="file-hint">Selecione uma coletânea (como Snes Station). O app prepara os jogos e baixa as artes automaticamente.</p>
-      <div class="actions-bar" style="margin-top: 10px;">
-        <button class="primary" id="snes-import">Escolher ISO e preparar</button>
-        <button class="secondary" id="snes-folder">Abrir biblioteca existente…</button>
-        <button class="secondary" id="snes-prepare" disabled>Preparar novamente</button>
-        <button class="danger" id="snes-cancel" hidden>Cancelar tarefa</button>
-      </div>
-      <p id="snes-selected-iso" class="library-path" style="margin-top: 10px;">Nenhuma ISO selecionada.</p>
-      <p id="snes-message" class="file-hint" role="status">Carregando biblioteca SNES…</p>
-      <details id="snes-log-panel" hidden>
-        <summary>Progresso e registro</summary>
-        <pre id="snes-log"></pre>
-      </details>
-    </div>
-
-    <div class="card">
-      <div class="card-title" style="justify-content:space-between;">
-        <span>2. Vitrine de Jogos</span>
-        <button class="secondary" id="snes-reveal" disabled>Mostrar pasta no Finder</button>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="snes-search">Pesquisar Jogos</label>
-          <input id="snes-search" type="search" placeholder="Nome do jogo ou arquivo">
+        <div class="mac-card">
+          <div class="card-heading">Imagem de Disco</div>
+          <div class="dropzone" id="dropzone-iso">
+            <div class="dropzone-glyph">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+            </div>
+            <div class="file-title" id="iso-file">Nenhuma ISO selecionada</div>
+            <p class="file-caption">A imagem original permanece intacta no disco.</p>
+          </div>
+          <button class="secondary" id="choose-iso">Selecionar ISO…</button>
         </div>
-        <div class="form-group">
-          <label for="snes-art">Filtro de Capas</label>
-          <select id="snes-art">
-            <option value="">Todas as capas</option>
-            <option value="art">Artes de títulos e jogos-base</option>
-            <option value="neutral">Capas não identificadas</option>
-          </select>
+
+        <div class="mac-card">
+          <div class="card-heading">Personalização do Título</div>
+          <div class="field-group" style="margin-bottom: 14px;">
+            <label class="field-label" for="convert-title">Título do Jogo</label>
+            <input id="convert-title" maxlength="100" placeholder="Nome identificado no disco">
+          </div>
+
+          <div class="field-group" style="margin-bottom: 14px;">
+            <label class="field-label">Arte de Capa (512×512)</label>
+            <div style="display:flex; align-items:center; gap:16px;">
+              <img id="cover-preview" alt="Prévia da capa" width="80" height="80" hidden style="border-radius:8px; border:1px solid var(--card-border);">
+              <div>
+                <div class="button-bar">
+                  <button class="secondary" id="choose-cover">Escolher imagem…</button>
+                  <button class="secondary" id="clear-cover" hidden>Remover</button>
+                </div>
+                <p id="cover-name" class="file-caption" style="margin-top:4px;">Capa padrão integrada.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="emulator">Perfil de Emulação</label>
+              <select id="emulator">
+                <option>Jak v2</option>
+                <option>Rogue v1</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="resolution">Resolução Interna</label>
+              <select id="resolution">
+                <option value="2x2">2× — Alta Resolução (Padrão)</option>
+                <option value="1x1">1× — Resolução Original</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="button-bar" style="margin-top: 10px;">
+            <button class="primary" id="convert" disabled>Converter em PKG</button>
+            <button class="secondary" id="queue-convert">Adicionar à fila</button>
+            <button class="danger" id="cancel-conversion" hidden>Cancelar</button>
+          </div>
+
+          <p id="conversion-state" class="file-caption" role="status" style="margin-top: 12px;">Selecione uma ISO para iniciar.</p>
+
+          <details id="conversion-details" hidden style="margin-top: 10px;">
+            <summary>Registro detalhado</summary>
+            <pre id="conversion-log"></pre>
+          </details>
+          <details id="convert-panel" style="display:none;"></details>
         </div>
-      </div>
-      <p id="snes-count" class="file-hint"></p>
-      <ul id="snes-items" class="snes-grid" aria-label="Jogos da coleção SNES"></ul>
-      <button class="secondary" id="snes-more" hidden style="margin-top: 10px;">Mostrar mais jogos</button>
-    </div>
+      </section>
 
-    <div class="card">
-      <div class="card-title">3. Enviar ao pSNES (PS4)</div>
-      <p class="file-hint">Feche o pSNES no console e ative o servidor FTP do GoldHEN (porta 2121).</p>
-      <div class="form-group" style="max-width: 320px; margin-top: 12px;">
-        <label for="snes-ps4">IP do PS4 na Rede</label>
-        <input id="snes-ps4" inputmode="decimal" placeholder="Ex: 192.168.18.45">
-      </div>
-      <label style="display:flex; align-items:center; gap:8px; margin: 12px 0; text-transform:none; font-weight:normal; cursor:pointer;">
-        <input id="snes-closed" type="checkbox" style="width:18px; height:18px; accent-color:var(--accent);">
-        Confirmo que o pSNES está fechado e o FTP do GoldHEN está ativo.
-      </label>
-      <button class="primary" id="snes-sync" disabled>Enviar jogos e capas ao PS4</button>
-      <p id="snes-next" class="file-hint" style="margin-top: 10px;"></p>
-      <details>
-        <summary>Onde os arquivos ficam</summary>
-        <p id="snes-path" class="library-path">Nenhuma biblioteca preparada ainda.</p>
-      </details>
-    </div>
-  </section>
+      <!-- ABA 3: SUPER NINTENDO -->
+      <section id="panel-snes" class="tab-pane" hidden>
+        <header class="view-header">
+          <h1 class="view-title" id="snes-heading">Super Nintendo</h1>
+          <p class="view-subtitle">Extração automática de coletâneas com artes e envio ao pSNES via FTP.</p>
+        </header>
 
-  <!-- ABA 4: BIBLIOTECA -->
-  <section id="panel-library" class="tab-panel" role="tabpanel" hidden>
-    <div class="view-header">
-      <h1 class="view-title" id="library-heading">Biblioteca Local</h1>
-      <p class="view-desc">Catalogação unificada de jogos no Mac ou em HDs externos sem alterar seus arquivos.</p>
-    </div>
-
-    <div class="card">
-      <div class="actions-bar" style="margin-top: 0; justify-content: space-between;">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="primary" id="library-files">Adicionar jogos…</button>
-          <button class="secondary" id="library-folders">Adicionar pasta…</button>
-          <button class="secondary" id="library-outputs">Incluir convertidos</button>
+        <div class="mac-card">
+          <div class="card-heading">1. Coletânea e Preparação</div>
+          <div class="button-bar">
+            <button class="primary" id="snes-import">Escolher ISO e preparar</button>
+            <button class="secondary" id="snes-folder">Abrir existente…</button>
+            <button class="secondary" id="snes-prepare" disabled>Repetir preparo</button>
+            <button class="danger" id="snes-cancel" hidden>Cancelar</button>
+          </div>
+          <p id="snes-selected-iso" class="library-path" style="margin-top: 10px;">Nenhuma ISO selecionada.</p>
+          <p id="snes-message" class="file-caption" role="status">Aguardando biblioteca…</p>
+          <details id="snes-log-panel" hidden style="margin-top:8px;">
+            <summary>Registro SNES</summary>
+            <pre id="snes-log"></pre>
+          </details>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button class="secondary" id="library-sync" disabled>Sincronizar</button>
-          <button class="danger" id="library-cancel" hidden>Cancelar</button>
+
+        <div class="mac-card">
+          <div class="card-heading">
+            <span>2. Vitrine de Jogos</span>
+            <button class="secondary" id="snes-reveal" disabled>Mostrar no Finder</button>
+          </div>
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="snes-search">Pesquisar</label>
+              <input id="snes-search" type="search" placeholder="Título ou nome do arquivo">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="snes-art">Filtro de Artes</label>
+              <select id="snes-art">
+                <option value="">Todas as artes</option>
+                <option value="art">Capas oficiais identificadas</option>
+                <option value="neutral">Capas genéricas</option>
+              </select>
+            </div>
+          </div>
+          <p id="snes-count" class="file-caption"></p>
+          <ul id="snes-items" class="snes-grid"></ul>
+          <button class="secondary" id="snes-more" hidden style="margin-top: 10px;">Mostrar mais</button>
         </div>
-      </div>
-      <p id="library-message" role="status" class="file-hint" style="margin-top: 12px;">Carregando biblioteca…</p>
-      <p id="library-current" class="library-path"></p>
 
-      <details>
-        <summary id="library-source-count">Origens da biblioteca (0)</summary>
-        <ul id="library-sources" class="library-sources" style="margin-top: 8px;"></ul>
-        <pre id="library-warning"></pre>
-      </details>
-    </div>
+        <div class="mac-card">
+          <div class="card-heading">3. Envio ao Console</div>
+          <div class="field-group" style="max-width: 320px; margin-bottom: 14px;">
+            <label class="field-label" for="snes-ps4">IP do PS4</label>
+            <input id="snes-ps4" inputmode="decimal">
+          </div>
 
-    <div class="card">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="library-search">Buscar no Acervo</label>
-          <input id="library-search" type="search" placeholder="Nome ou caminho do jogo">
+          <label class="mac-toggle" style="margin-bottom: 14px;">
+            <input id="snes-closed" type="checkbox">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span>O emulador pSNES está fechado e o FTP do GoldHEN está ativo</span>
+          </label>
+
+          <div>
+            <button class="primary" id="snes-sync" disabled>Enviar jogos e capas ao PS4</button>
+          </div>
+          <p id="snes-next" class="file-caption" style="margin-top: 8px;"></p>
+          <details style="margin-top:8px;">
+            <summary>Pasta local de destino</summary>
+            <p id="snes-path" class="library-path"></p>
+          </details>
         </div>
-        <div class="form-group">
-          <label for="library-platform">Plataforma</label>
-          <select id="library-platform">
-            <option value="">Todas as plataformas</option>
-          </select>
+      </section>
+
+      <!-- ABA 4: BIBLIOTECA -->
+      <section id="panel-library" class="tab-pane" hidden>
+        <header class="view-header">
+          <h1 class="view-title" id="library-heading">Biblioteca de Jogos</h1>
+          <p class="view-subtitle">Catálogo unificado de títulos locais no Mac ou em volumes externos.</p>
+        </header>
+
+        <div class="mac-card">
+          <div class="button-bar" style="justify-content: space-between;">
+            <div class="button-bar">
+              <button class="primary" id="library-files">Adicionar jogos…</button>
+              <button class="secondary" id="library-folders">Adicionar pasta…</button>
+              <button class="secondary" id="library-outputs">Incluir convertidos</button>
+            </div>
+            <div class="button-bar">
+              <button class="secondary" id="library-sync" disabled>Sincronizar</button>
+              <button class="danger" id="library-cancel" hidden>Cancelar</button>
+            </div>
+          </div>
+          <p id="library-message" role="status" class="file-caption" style="margin-top: 10px;">Carregando acervo…</p>
+          <p id="library-current" class="library-path"></p>
+
+          <details style="margin-top:8px;">
+            <summary id="library-source-count">Origens monitoradas (0)</summary>
+            <ul id="library-sources" class="library-sources"></ul>
+            <pre id="library-warning"></pre>
+          </details>
         </div>
-        <div class="form-group">
-          <label for="library-availability">Disponibilidade</label>
-          <select id="library-availability">
-            <option value="">Todos</option>
-            <option value="available">Disponíveis</option>
-            <option value="offline">Indisponíveis</option>
-            <option value="duplicates">Cópias idênticas</option>
-          </select>
+
+        <div class="mac-card">
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label" for="library-search">Buscar Título</label>
+              <input id="library-search" type="search" placeholder="Nome ou caminho do arquivo">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="library-platform">Plataforma</label>
+              <select id="library-platform">
+                <option value="">Todas</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom: 14px;">
+            <label class="field-label" for="library-availability">Disponibilidade</label>
+            <select id="library-availability">
+              <option value="">Todos os status</option>
+              <option value="available">Disponíveis</option>
+              <option value="offline">Indisponíveis</option>
+              <option value="duplicates">Cópias duplicadas</option>
+            </select>
+          </div>
+
+          <p id="library-count" class="file-caption"></p>
+          <ul id="library-items" class="library-items"></ul>
+          <button class="secondary" id="library-more" hidden style="margin-top: 14px;">Carregar mais</button>
         </div>
-      </div>
+      </section>
 
-      <p id="library-count" class="file-hint"></p>
-      <ul id="library-items" class="library-items"></ul>
-      <button class="secondary" id="library-more" hidden style="margin-top: 14px;">Mostrar mais arquivos</button>
+      <!-- ABA 5: FILA DE ENVIOS -->
+      <section id="panel-queue" class="tab-pane" hidden>
+        <header class="view-header">
+          <h1 class="view-title" id="queue-heading">Fila de Tarefas</h1>
+          <p class="view-subtitle">Gerenciador de transferências ativas e histórico de pacotes processados.</p>
+        </header>
+
+        <div class="mac-card">
+          <div class="button-bar">
+            <button class="primary" id="queue-start" disabled>Iniciar Fila</button>
+            <button class="secondary" id="queue-pause" disabled>Pausar após a atual</button>
+          </div>
+          <p id="queue-message" class="file-caption" role="status" style="margin-top: 10px;">Carregando fila…</p>
+          <p id="queue-error" class="file-caption library-error" role="alert" hidden></p>
+          <ul id="queue-pending" class="library-items" style="margin-top: 12px;"></ul>
+        </div>
+
+        <div class="mac-card">
+          <details open>
+            <summary id="queue-history-count" style="font-weight:600; font-size:14px; color:var(--text-primary);">Histórico de Execução</summary>
+            <ul id="queue-history" class="library-items" style="margin-top: 10px;"></ul>
+            <button id="queue-more" class="secondary" hidden style="margin-top: 10px;">Mostrar mais tarefas</button>
+          </details>
+        </div>
+      </section>
+
     </div>
-  </section>
+  </main>
 
-  <!-- ABA 5: FILA & HISTÓRICO -->
-  <section id="panel-queue" class="tab-panel" role="tabpanel" hidden>
-    <div class="view-header">
-      <h1 class="view-title" id="queue-heading">Fila de Transferência</h1>
-      <p class="view-desc">Acompanhe tarefas de envio e conversão em execução ou pendentes.</p>
-    </div>
-
-    <div class="card">
-      <div class="actions-bar" style="margin-top: 0;">
-        <button class="primary" id="queue-start" disabled>Iniciar Fila</button>
-        <button class="secondary" id="queue-pause" disabled>Pausar após a tarefa atual</button>
-      </div>
-      <p id="queue-message" class="file-hint" role="status" style="margin-top: 10px;">Carregando fila…</p>
-      <p id="queue-error" class="file-hint library-error" role="alert" hidden></p>
-      <ul id="queue-pending" class="library-items" style="margin-top: 14px;"></ul>
-    </div>
-
-    <div class="card">
-      <details open>
-        <summary id="queue-history-count" style="font-size:15px; font-weight:600;">Histórico de Tarefas</summary>
-        <ul id="queue-history" class="library-items" style="margin-top: 12px;"></ul>
-        <button id="queue-more" class="secondary" hidden style="margin-top: 10px;">Mostrar mais tarefas</button>
-      </details>
-    </div>
-  </section>
-
-</main>
+</div>
 
 <script>
-// Tab Switching System
-function switchTab(tabId) {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    const active = btn.dataset.tab === tabId;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-selected', active);
+// Sidebar Tab Navigation
+function selectTab(tabKey) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const active = item.dataset.tab === tabKey;
+    item.classList.toggle('active', active);
   });
-  document.querySelectorAll('.tab-panel').forEach(panel => {
-    panel.hidden = panel.id !== 'panel-' + tabId;
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.hidden = pane.id !== 'panel-' + tabKey;
   });
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => selectTab(item.dataset.tab));
 });
 
-// Sync IP headers
+// PS4 IP Live Sync
 const ps4Input = document.querySelector('#ps4');
 const snesPs4Input = document.querySelector('#snes-ps4');
-const headerStatus = document.querySelector('#header-ps4-status');
+const sidebarIpVal = document.querySelector('#sidebar-ps4-ip');
 
-function updateHeaderIp(ip) {
-  if (ip && headerStatus) headerStatus.textContent = 'PS4: ' + ip;
+function updateSidebarIp(ip) {
+  if (ip && sidebarIpVal) sidebarIpVal.textContent = ip;
 }
 
 if (ps4Input) {
   ps4Input.addEventListener('input', () => {
     if (snesPs4Input) snesPs4Input.value = ps4Input.value;
-    updateHeaderIp(ps4Input.value);
+    updateSidebarIp(ps4Input.value);
   });
 }
 if (snesPs4Input) {
   snesPs4Input.addEventListener('input', () => {
     if (ps4Input) ps4Input.value = snesPs4Input.value;
-    updateHeaderIp(snesPs4Input.value);
+    updateSidebarIp(snesPs4Input.value);
   });
 }
 
-// Drag & Drop visual highlights
+// Drag & Drop Handlers
 function setupDropzone(zoneId, inputTriggerId) {
   const zone = document.getElementById(zoneId);
   if (!zone) return;
@@ -889,14 +1031,14 @@ const fileBox = document.querySelector('#file'),
 if (fileBox) {
   const origFileScroll = fileBox.scrollIntoView;
   fileBox.scrollIntoView = function(...args) {
-    switchTab('send');
+    selectTab('send');
     if (origFileScroll) origFileScroll.apply(this, args);
   };
 }
 if (send) {
   const origSendScroll = send.scrollIntoView;
   send.scrollIntoView = function(...args) {
-    switchTab('send');
+    selectTab('send');
     if (origSendScroll) origSendScroll.apply(this, args);
   };
 }
@@ -904,7 +1046,7 @@ const convertPanelElem = document.querySelector('#convert-panel');
 if (convertPanelElem) {
   const origConvertScroll = convertPanelElem.scrollIntoView;
   convertPanelElem.scrollIntoView = function(...args) {
-    switchTab('ps2');
+    selectTab('ps2');
     if (origConvertScroll) origConvertScroll.apply(this, args);
   };
 }
@@ -914,7 +1056,7 @@ async function state() {
   if (d.selectedFile) fileBox.innerHTML = '<strong>' + escapeHtml(d.selectedFile.split('/').pop()) + '</strong>';
   else fileBox.textContent = 'Nenhum arquivo selecionado';
   if (d.localIPs?.length) {
-    document.querySelector('#ipnote').textContent = 'IPs detectados no Mac: ' + d.localIPs.join(', ') + ' — confirme o IP na mesma rede do PS4.';
+    document.querySelector('#ipnote').textContent = 'IPs no Mac: ' + d.localIPs.join(', ') + ' — confirme o IP da mesma rede.';
     if (d.localIPs.includes('192.168.18.106')) document.querySelector('#mac').value = '192.168.18.106';
     else if (d.localIPs.length === 1) document.querySelector('#mac').value = d.localIPs[0];
   }
@@ -939,7 +1081,7 @@ choose.onclick = async () => {
 };
 
 send.onclick = async () => {
-  statusBox.className = 'status-box show';
+  statusBox.className = 'status-callout show';
   statusBox.textContent = 'Enviando pedido ao PS4…';
   send.disabled = true;
   try {
@@ -953,20 +1095,20 @@ send.onclick = async () => {
     });
     const d = await r.json();
     if (!r.ok || d.result?.status === 'fail') {
-      statusBox.className = 'status-box show err';
+      statusBox.className = 'status-callout show err';
       statusBox.textContent = d.result?.error || d.error || JSON.stringify(d);
       return;
     }
     if (d.result?.status === 'success') {
-      statusBox.className = 'status-box show ok';
-      statusBox.textContent = `Pedido aceito pelo PS4.\nJogo: ${d.result.title || 'Pacote'}\nTarefa: ${d.result.task_id}\nTamanho: ${(d.size/1024/1024/1024).toFixed(2)} GB\n\nAcompanhe o download nas notificações do PS4.`;
+      statusBox.className = 'status-callout show ok';
+      statusBox.textContent = `Pedido aceito pelo PS4.\nJogo: ${d.result.title || 'Pacote'}\nTarefa: ${d.result.task_id}\nTamanho: ${(d.size/1024/1024/1024).toFixed(2)} GB\n\nAcompanhe o download nas notificações do console.`;
       return;
     }
-    statusBox.className = 'status-box show err';
+    statusBox.className = 'status-callout show err';
     statusBox.textContent = JSON.stringify(d, null, 2);
   } catch(e) {
-    statusBox.className = 'status-box show err';
-    statusBox.textContent = 'Falha ao conversar com o PS4: ' + e.message;
+    statusBox.className = 'status-callout show err';
+    statusBox.textContent = 'Falha ao conectar com o PS4: ' + e.message;
   } finally {
     send.disabled = false;
   }
@@ -978,8 +1120,8 @@ cancel.onclick = async () => {
   try {
     await fetch('/api/cancel', { method: 'POST' });
     fileBox.textContent = 'Nenhum arquivo selecionado';
-    statusBox.className = 'status-box show';
-    statusBox.textContent = 'Envio interrompido. Escolha outro arquivo .pkg para enviar.';
+    statusBox.className = 'status-callout show';
+    statusBox.textContent = 'Envio interrompido. Escolha outro arquivo .pkg.';
   } catch(e) {
     alert('Não foi possível interromper: ' + e.message);
   } finally {
@@ -1027,7 +1169,7 @@ function renderConversion(d) {
   document.querySelector('#choose-cover').disabled = coverBusy;
   document.querySelector('#clear-cover').disabled = coverBusy;
   document.querySelector('#clear-cover').hidden = !d.coverSelected;
-  document.querySelector('#cover-name').textContent = d.coverSelected ? d.coverName : 'Usar a capa padrão do pacote.';
+  document.querySelector('#cover-name').textContent = d.coverSelected ? d.coverName : 'Capa padrão integrada.';
   const preview = document.querySelector('#cover-preview');
   preview.hidden = !d.coverSelected;
   if (d.coverSelected && coverKey !== d.coverName) {
@@ -1051,10 +1193,10 @@ function renderConversion(d) {
   document.querySelector('#conversion-details').hidden = !(d.log || []).length;
 
   const labels = {
-    idle: d.iso ? 'ISO selecionada. Confira as opções e clique em Converter em PKG.' : 'Selecione uma ISO de PS2 para começar.',
-    running: 'Convertendo… Mantenha o app aberto. Acompanhe o registro abaixo.',
-    cancelling: 'Cancelando a conversão…',
-    cancelled: 'Conversão cancelada. A ISO original foi preservada.',
+    idle: d.iso ? 'ISO selecionada. Confira os ajustes e clique em Converter.' : 'Selecione uma ISO de PS2 para iniciar.',
+    running: 'Convertendo… Mantenha o app aberto.',
+    cancelling: 'Cancelando…',
+    cancelled: 'Conversão cancelada. ISO preservada.',
     error: 'Falha: ' + d.error,
     success: 'PKG pronto e selecionado para envio. Salvo em: ' + d.output
   };
