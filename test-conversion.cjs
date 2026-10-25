@@ -28,11 +28,14 @@ test('conversion validates options, isolates output, and selects the finished pa
   const first=selected;await c.start();await c.done;
   assert.notEqual(first,selected);assert.ok(fs.existsSync(first));
   const calls=[];
-  const restored=new Conversion({outputRoot:path.join(root,'out'),open:async(...args)=>calls.push(args)});
-  assert.equal(restored.state().lastOutput,selected);
-  await restored.reveal(); assert.deepEqual(calls[0],['/usr/bin/open',['-R',selected]]);
-  await restored.reveal(true); assert.deepEqual(calls[1],['/usr/bin/open',[path.join(root,'out')]]);
-  fs.unlinkSync(selected);assert.equal(restored.state().lastOutput,'');
+  const again=new Conversion({outputRoot:path.join(root,'out'),open:async(...args)=>calls.push(args)});
+  assert.equal(again.state().lastOutput,'');
+  assert.equal(fs.existsSync(path.join(root,'out','last-result.json')),false);
+  assert.equal(await c.discard(path.join(root,'iso-outside.pkg')),false);
+  assert.equal(await c.discard(selected),true);
+  assert.equal(fs.existsSync(path.dirname(selected)),false);assert.ok(fs.existsSync(first));
+  assert.equal(c.state().lastOutput,'');assert.equal(fs.readFileSync(iso,'utf8'),'untouched');
+  await c.purge();assert.equal(fs.existsSync(path.join(root,'out')),false);assert.equal(fs.readFileSync(iso,'utf8'),'untouched');
 });
 
 test('failure and cancellation never select incomplete output or delete the ISO', async t => {
@@ -86,7 +89,6 @@ test('missing PS2 boot serial explains unsupported images and preserves the sour
   const original = fs.readFileSync(iso);
   const out = path.join(root, 'out'); fs.mkdirSync(out);
   const previous = path.join(out, 'previous.pkg'); fs.writeFileSync(previous, Buffer.from('7f434e54', 'hex'));
-  fs.writeFileSync(path.join(out, 'last-result.json'), JSON.stringify({ output: previous }));
   const fake = path.join(root, 'converter');
   fs.writeFileSync(fake, `#!${process.execPath}\nconsole.error('ERROR: could not detect a PS2 boot serial (e.g. SLUS_209.32) in the ISO');process.exit(1);`, { mode: 0o700 });
   let selected = false;
@@ -98,7 +100,7 @@ test('missing PS2 boot serial explains unsupported images and preserves the sour
   assert.match(c.state().error, /não indica uma ISO corrompida/);
   assert.ok(c.state().log.some(line => line.includes('could not detect a PS2 boot serial')));
   assert.equal(selected, false); assert.equal(c.state().output, '');
-  assert.equal(c.state().lastOutput, previous); assert.ok(fs.existsSync(previous));
+  assert.equal(c.state().lastOutput, ''); assert.ok(fs.existsSync(previous));
   assert.deepEqual(fs.readFileSync(iso), original);
-  assert.deepEqual(fs.readdirSync(out).sort(), ['last-result.json', 'previous.pkg']);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['previous.pkg']);
 });

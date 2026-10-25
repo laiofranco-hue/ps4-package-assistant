@@ -12,18 +12,13 @@ class Conversion {
   constructor({ onComplete = () => {}, executable, outputRoot, pickFile, pickCoverFile, open = run } = {}) {
     this.onComplete = onComplete;
     this.executable = executable;
-    this.outputRoot = outputRoot || path.join(os.homedir(), '.codex', '.chatgpt-projects', 'ps4-package-assistant-local', 'outputs', 'PS2-PKG');
+    this.outputRoot = outputRoot || path.join(os.tmpdir(), 'ps4-package-assistant', 'convertidos');
     this.pickFile = pickFile || (async () => (await run('/usr/bin/osascript', ['-e', 'POSIX path of (choose file with prompt "Selecione a ISO de PS2")'])).stdout.trim());
     this.pickCoverFile = pickCoverFile || (async () => (await run('/usr/bin/osascript', ['-e', 'POSIX path of (choose file with prompt "Escolha a capa do jogo (PNG ou JPG)" of type {"public.png", "public.jpeg"})'])).stdout.trim());
     this.cover = '';
     this.coverName = '';
     this.open = open;
     this.lastOutput = '';
-    try {
-      const saved = JSON.parse(fs.readFileSync(path.join(this.outputRoot, 'last-result.json'), 'utf8'));
-      const relative = path.relative(this.outputRoot, saved.output);
-      if (relative && !relative.startsWith('..') && !path.isAbsolute(relative) && fs.statSync(saved.output).isFile()) this.lastOutput = saved.output;
-    } catch {}
     this.iso = process.env.ISO_FILE || '';
     this.job = { status: 'idle', log: [], error: '', output: '' };
     this.running = false;
@@ -171,9 +166,6 @@ class Conversion {
         if (magic.toString('hex') !== '7f434e54') throw new Error('O arquivo gerado não tem cabeçalho PKG válido.');
       } finally { await handle.close(); }
       this.controller.signal.throwIfAborted();
-      const marker = path.join(this.outputRoot, 'last-result.json');
-      await fs.promises.writeFile(marker + '.tmp', JSON.stringify({ output: pkg }));
-      await fs.promises.rename(marker + '.tmp', marker);
       this.lastOutput = pkg;
       this.job.output = pkg;
       this.job.status = 'success';
@@ -190,6 +182,20 @@ class Conversion {
       this.child = null;
       this.running = false;
     }
+  }
+  // Converted packages are temporary: they only exist until the console has downloaded them.
+  async discard(file) {
+    const relative = file ? path.relative(this.outputRoot, file) : '';
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) return false;
+    await fs.promises.rm(path.join(this.outputRoot, relative.split(path.sep)[0]), { recursive: true, force: true });
+    if (this.lastOutput === file) this.lastOutput = '';
+    if (this.job.output === file) this.job.output = '';
+    return true;
+  }
+  async purge() {
+    if (this.running) return;
+    await fs.promises.rm(this.outputRoot, { recursive: true, force: true }).catch(() => {});
+    this.lastOutput = '';
   }
   cancel() {
     if (!this.running) return this.state();

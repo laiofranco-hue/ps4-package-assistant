@@ -113,6 +113,30 @@ async function cancelReceiverTask(ip, taskId) {
   }
   return confirmed;
 }
+async function fetchProgress(ip, id) {
+  const response = await fetch(`http://${ip}:12800/api/get_task_progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: id }), signal: AbortSignal.timeout(15000) });
+  const text = await response.text();
+  if (!response.ok) throw new Error('Consulta ao PS4 falhou. Mantenha o instalador aberto e consulte novamente.');
+  return JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token)));
+}
+// Converted packages are temporary: remove one as soon as the console has downloaded it.
+async function discardGenerated(file) {
+  if (await conversion.discard(file)) { if (selectedFile === file) selectedFile = ''; }
+}
+function watchManualTransfer(ip, taskId, file) {
+  let failures = 0;
+  const tick = async () => {
+    try {
+      const data = await fetchProgress(ip, taskId);
+      if (data.cancelled === true || Number(data.error) !== 0) return;
+      const total = Number(data.length_total), done = Number(data.transferred_total);
+      if (Number.isFinite(total) && total > 0 && done >= total) return discardGenerated(file);
+      failures = 0;
+    } catch { if (++failures >= 5) return; }
+    setTimeout(tick, 5000).unref();
+  };
+  setTimeout(tick, 5000).unref();
+}
 const { TaskQueue } = require('./queue');
 let queueSyncTimer;
 async function syncQueueSnapshot(state) {
@@ -130,12 +154,8 @@ const queue = new TaskQueue({
   install: installFile,
   cancelSend: cancelReceiverTask,
   onChange: scheduleQueueSync,
-  progress: async (ip, id) => {
-    const response = await fetch(`http://${ip}:12800/api/get_task_progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: id }), signal: AbortSignal.timeout(15000) });
-    const text = await response.text();
-    if (!response.ok) throw new Error('Consulta ao PS4 falhou. Mantenha o instalador aberto e consulte novamente.');
-    return JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|\b0x[0-9a-f]+\b/gi, token => token.startsWith('"') ? token : JSON.stringify(token)));
-  },
+  progress: fetchProgress,
+  onSent: job => discardGenerated(job.file),
   runConversion: async (job, update, signal) => {
     await queuedConversion.useIso(job.file);
     const oldCover = queuedConversion.cover;
@@ -319,7 +339,9 @@ const ui = http.createServer(async (req, res) => {
     manualInstalling = true;
     try {
       if (queue.active) throw new Error('Pause a fila antes de usar o envio manual.');
-      const result = await installFile(selectedFile, await readBody(req));
+      const file = selectedFile, options = await readBody(req);
+      const result = await installFile(file, options);
+      if (result.result?.status === 'success' && Number.isInteger(result.result.task_id)) watchManualTransfer(options.ps4Ip, result.result.task_id, file);
       return json(res, result.httpStatus < 400 ? 200 : 502, result);
     } catch (e) {
       console.log(`${new Date().toISOString()} falha ao pedir instalação: ${e.message}`);
@@ -379,4 +401,5 @@ files.on('error', err => { console.error(`Não foi possível iniciar o servidor 
 ui.listen(UI_PORT, '127.0.0.1', () => console.log(`Interface: http://localhost:${UI_PORT}`));
 files.listen(FILE_PORT, '0.0.0.0', () => console.log(`Servidor de pacotes na porta ${FILE_PORT}; acesso limitado ao PS4 informado. IPs do Mac: ${localIPv4s().join(', ') || 'não detectado'}`));
 
-for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { queue.shutdown(); queuedConversion.cancel(); conversion.cancel(); library.cancel(); snes.cancel(); Promise.allSettled([conversion.done, queuedConversion.done, library.done, queue.done, snes.done]).finally(() => process.exit(0)); });
+conversion.purge();
+for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { queue.shutdown(); queuedConversion.cancel(); conversion.cancel(); library.cancel(); snes.cancel(); Promise.allSettled([conversion.done, queuedConversion.done, library.done, queue.done, snes.done]).finally(() => conversion.purge()).finally(() => process.exit(0)); });

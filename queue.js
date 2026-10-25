@@ -17,10 +17,10 @@ async function fingerprint(file, kind) {
   return { size: stat.size, mtimeMs: stat.mtimeMs, ctimeMs: stat.ctimeMs };
 }
 class TaskQueue {
-  constructor({ dataDir, runConversion, cancelConversion, install, progress, cancelSend, busy = () => false, pollMs = 2500, onChange = () => {} } = {}) {
+  constructor({ dataDir, runConversion, cancelConversion, install, progress, cancelSend, busy = () => false, pollMs = 2500, onChange = () => {}, onSent = () => {} } = {}) {
     this.dir = dataDir || path.join(os.homedir(), 'Library', 'Application Support', 'PS4 Package Assistant', 'queue');
     this.file = path.join(this.dir, 'queue.json');
-    Object.assign(this, { runConversion, cancelConversion, install, progress, cancelSend, busy, pollMs, onChange });
+    Object.assign(this, { runConversion, cancelConversion, install, progress, cancelSend, busy, pollMs, onChange, onSent });
     this.jobs = []; this.enabled = false; this.active = null; this.error = ''; this.readOnly = false;
     try {
       const data = JSON.parse(fs.readFileSync(this.file, 'utf8'));
@@ -91,6 +91,7 @@ class TaskQueue {
             await this.monitor(job);
           }
           job.status = 'success'; job.error = '';
+          if (job.kind === 'send') Promise.resolve(this.onSent(job)).catch(() => {});
         } catch (e) {
           let stopped = false;
           if (job.kind === 'send' && job.taskId != null && this.controller.signal.aborted && this.cancelSend) {
@@ -140,7 +141,7 @@ class TaskQueue {
     this.writable(); const job = this.jobs.find(j => j.id === id);
     if (this.busy() || this.active || !job || job.status !== 'attention' || job.taskId == null) throw new Error('Não há envio disponível para consultar.');
     this.active = job; this.controller = new AbortController(); job.status = 'running'; this.save();
-    this.done = this.monitor(job).then(() => { job.status = 'success'; job.error = ''; }).catch(e => { job.status = e.cancelledOnConsole ? 'cancelled' : 'attention'; job.error = e.message; }).finally(() => { job.finishedAt = now(); this.active = null; this.save(); });
+    this.done = this.monitor(job).then(() => { job.status = 'success'; job.error = ''; Promise.resolve(this.onSent(job)).catch(() => {}); }).catch(e => { job.status = e.cancelledOnConsole ? 'cancelled' : 'attention'; job.error = e.message; }).finally(() => { job.finishedAt = now(); this.active = null; this.save(); });
     return this.state();
   }
   shutdown() { this.enabled = false; if (this.active) this.cancel(this.active.id); return this.done; }
